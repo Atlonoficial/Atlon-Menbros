@@ -19,10 +19,10 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       showSuccess('Login realizado com sucesso!');
       
-      if (email === 'admin@atlon.com.br') {
+      if (loggedInUser.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/meus-cursos');

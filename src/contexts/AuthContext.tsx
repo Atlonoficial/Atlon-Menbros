@@ -1,32 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
+import { mockUsers } from '@/data/mockData';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock de usuários para demonstração
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'
-  },
-  {
-    id: '2',
-    name: 'João Silva',
-    email: 'aluno@example.com',
-    role: 'aluno',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Joao'
-  }
-];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -38,12 +21,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     // Simulação de login
     const foundUser = mockUsers.find(u => u.email === email);
     if (foundUser) {
       setUser(foundUser);
       localStorage.setItem('user', JSON.stringify(foundUser));
+      return foundUser;
     } else {
       throw new Error('Credenciais inválidas');
     }

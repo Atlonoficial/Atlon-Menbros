@@ -329,7 +329,8 @@ export const mockLessons: Lesson[] = [
   }
 ];
 
-export const mockEnrollments: Enrollment[] = [
+// Exportação que estava faltando
+export const mockCourseAccess: Enrollment[] = [
   {
     id: '1',
     userId: '2',
@@ -363,6 +364,8 @@ export const mockEnrollments: Enrollment[] = [
     paymentStatus: 'paid'
   }
 ];
+
+export const mockEnrollments: Enrollment[] = mockCourseAccess;
 
 export const mockProgress: StudentProgress[] = [
   {

@@ -4,26 +4,29 @@
 
 @layer base {
   :root {
-    /* Cores Atlon */
-    --atlon-green: 0 255 127;
-    --atlon-green-dark: 0 204 102;
-    --atlon-green-light: 51 255 153;
+    /* Cores Atlon - Verde Neon Exato */
+    --atlon-green: 0 255 127; /* #00FF7F - Verde neon da logo */
+    --atlon-green-dark: 0 204 102; /* Tom mais escuro */
+    --atlon-green-light: 51 255 153; /* Tom mais claro */
+    --atlon-green-glow: 0 255 127; /* Para efeitos de brilho */
     
-    /* Backgrounds */
-    --background: 0 0 0;
-    --background-secondary: 10 10 10;
-    --background-card: 26 26 26;
+    /* Backgrounds - Preto profundo com nuances */
+    --background: 0 0 0; /* Preto puro */
+    --background-secondary: 6 6 6; /* #060606 */
+    --background-card: 10 10 10; /* #0A0A0A */
+    --background-elevated: 15 15 15; /* #0F0F0F */
     
-    /* Foreground */
-    --foreground: 255 255 255;
-    --foreground-secondary: 179 179 179;
+    /* Foreground - Textos */
+    --foreground: 255 255 255; /* Branco puro */
+    --foreground-secondary: 179 179 179; /* Cinza claro */
+    --foreground-muted: 115 115 115; /* Cinza médio */
 
     /* Card */
-    --card: 26 26 26;
+    --card: 10 10 10;
     --card-foreground: 255 255 255;
 
     /* Popover */
-    --popover: 26 26 26;
+    --popover: 10 10 10;
     --popover-foreground: 255 255 255;
 
     /* Primary (Verde Atlon) */
@@ -31,16 +34,16 @@
     --primary-foreground: 0 0 0;
 
     /* Secondary */
-    --secondary: 38 38 38;
+    --secondary: 15 15 15;
     --secondary-foreground: 255 255 255;
 
     /* Muted */
-    --muted: 38 38 38;
-    --muted-foreground: 179 179 179;
+    --muted: 15 15 15;
+    --muted-foreground: 115 115 115;
 
     /* Accent */
-    --accent: 38 38 38;
-    --accent-foreground: 255 255 255;
+    --accent: 15 15 15;
+    --accent-foreground: 0 255 127;
 
     /* Destructive */
     --destructive: 239 68 68;
@@ -48,17 +51,17 @@
 
     /* Border */
     --border: 0 255 127;
-    --input: 38 38 38;
+    --input: 15 15 15;
     --ring: 0 255 127;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 10 10 10;
-    --sidebar-foreground: 255 255 255;
+    --sidebar-background: 6 6 6;
+    --sidebar-foreground: 179 179 179;
     --sidebar-primary: 0 255 127;
     --sidebar-primary-foreground: 0 0 0;
-    --sidebar-accent: 26 26 26;
+    --sidebar-accent: 10 10 10;
     --sidebar-accent-foreground: 255 255 255;
     --sidebar-border: 0 255 127;
     --sidebar-ring: 0 255 127;
@@ -73,35 +76,65 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   
-  /* Scrollbar personalizada */
+  /* Scrollbar personalizada com tema Atlon */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
   
   ::-webkit-scrollbar-track {
     background: rgb(var(--background-secondary));
+    border-radius: 5px;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--atlon-green));
-    border-radius: 4px;
+    background: linear-gradient(180deg, rgb(var(--atlon-green)), rgb(var(--atlon-green-dark)));
+    border-radius: 5px;
+    border: 2px solid rgb(var(--background-secondary));
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--atlon-green-dark));
+    background: rgb(var(--atlon-green-light));
   }
 }
 
-/* Animações customizadas */
+/* Animações customizadas com tema futurista */
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;
   }
   100% {
     background-position: 1000px 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(var(--atlon-green), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(var(--atlon-green), 0.6);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
   }
 }
 
@@ -116,24 +149,198 @@
   background-size: 1000px 100%;
 }
 
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 /* Gradiente Atlon */
 .gradient-atlon {
   background: linear-gradient(135deg, rgb(var(--atlon-green-light)), rgb(var(--atlon-green-dark)));
 }
 
 .gradient-atlon-text {
-  background: linear-gradient(135deg, rgb(var(--atlon-green-light)), rgb(var(--atlon-green-dark)));
+  background: linear-gradient(135deg, rgb(var(--atlon-green-light)), rgb(var(--atlon-green)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Efeito de brilho nos cards */
+/* Efeito de brilho nos cards - Tema IA */
 .card-glow {
+  position: relative;
   box-shadow: 0 0 20px rgba(var(--atlon-green), 0.1);
-  transition: box-shadow 0.3s ease;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(var(--atlon-green), 0.1);
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(var(--atlon-green), 0.3), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .card-glow:hover {
-  box-shadow: 0 0 30px rgba(var(--atlon-green), 0.2);
+  box-shadow: 0 0 30px rgba(var(--atlon-green), 0.3), 0 0 60px rgba(var(--atlon-green), 0.1);
+  transform: translateY(-2px);
+}
+
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Efeito de scan line futurista */
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgb(var(--atlon-green)), transparent);
+  animation: scan-line 3s linear infinite;
+  opacity: 0.5;
+}
+
+/* Botões com efeito neon */
+.btn-neon {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(var(--atlon-green), 0.5);
+  transition: all 0.3s ease;
+}
+
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(var(--atlon-green), 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-neon:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 20px rgba(var(--atlon-green), 0.8), 0 0 40px rgba(var(--atlon-green), 0.4);
+}
+
+/* Grid pattern de fundo - Tema tech */
+.tech-grid {
+  background-image: 
+    linear-gradient(rgba(var(--atlon-green), 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--atlon-green), 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Texto com efeito glitch */
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.glitch::before {
+  animation: glitch-1 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  color: rgb(var(--atlon-green));
+  z-index: -1;
+}
+
+.glitch::after {
+  animation: glitch-2 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+  color: rgb(var(--atlon-green-light));
+  z-index: -2;
+}
+
+@keyframes glitch-1 {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-2px);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes glitch-2 {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(2px);
+  }
+  40% {
+    transform: translateX(-2px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  80% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Loader futurista */
+.loader-ring {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(var(--atlon-green), 0.1);
+  border-top-color: rgb(var(--atlon-green));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

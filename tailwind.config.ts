@@ -19,7 +19,7 @@ export default {
     },
     extend: {
       colors: {
-        border: "rgb(var(--border) / 0.1)",
+        border: "rgba(var(--border) / 0.1)",
         input: "rgb(var(--input))",
         ring: "rgb(var(--ring))",
         background: "rgb(var(--background))",
@@ -59,7 +59,7 @@ export default {
           "primary-foreground": "rgb(var(--sidebar-primary-foreground))",
           accent: "rgb(var(--sidebar-accent))",
           "accent-foreground": "rgb(var(--sidebar-accent-foreground))",
-          border: "rgb(var(--sidebar-border) / 0.1)",
+          border: "rgba(var(--sidebar-border) / 0.1)",
           ring: "rgb(var(--sidebar-ring))",
         },
         atlon: {
@@ -94,11 +94,34 @@ export default {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(var(--atlon-green), 0.3)" },
+          "50%": { boxShadow: "0 0 40px rgba(var(--atlon-green), 0.6)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "scan-line": {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
+        "scan-line": "scan-line 3s linear infinite",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "tech-grid": "linear-gradient(rgba(var(--atlon-green), 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--atlon-green), 0.03) 1px, transparent 1px)",
+      },
+      boxShadow: {
+        "neon": "0 0 10px rgba(var(--atlon-green), 0.5), 0 0 20px rgba(var(--atlon-green), 0.3)",
+        "neon-lg": "0 0 20px rgba(var(--atlon-green), 0.8), 0 0 40px rgba(var(--atlon-green), 0.4)",
       },
     },
   },

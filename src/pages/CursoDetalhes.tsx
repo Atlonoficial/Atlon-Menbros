@@ -1,11 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { ModuleCard } from '@/components/ModuleCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { mockCourses, mockModules } from '@/data/mockData';
-import { Play, Clock, Award } from 'lucide-react';
+import { Play, Clock, Award, BookOpen, ChevronRight } from 'lucide-react';
 
 const CursoDetalhes: React.FC = () => {
   const { courseId } = useParams();
@@ -15,7 +15,16 @@ const CursoDetalhes: React.FC = () => {
   const modules = mockModules.filter(m => m.courseId === courseId);
 
   if (!course) {
-    return <div>Curso não encontrado</div>;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl text-white mb-4">Curso não encontrado</h1>
+          <Button onClick={() => navigate('/meus-cursos')} className="gradient-atlon text-black font-bold">
+            Voltar para Meus Cursos
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const handleModuleClick = (moduleId: string) => {
@@ -23,79 +32,112 @@ const CursoDetalhes: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#060606] via-[#0B0B0B] to-[#060606]">
+    <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0A0A] to-black">
       <Header />
       
       {/* Hero Banner */}
       <div className="relative h-[60vh] overflow-hidden">
         <img
           src={course.bannerImage}
-          alt={course.name}
+          alt={course.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#060606] via-[#060606]/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
         
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl">
-              <Badge className="mb-4 bg-[#A020F0]/20 text-[#A020F0] border-[#A020F0]/50">
+              <Badge className="mb-4 bg-atlon-green/20 text-atlon-green border-atlon-green/50">
                 <Award className="mr-2 h-4 w-4" />
                 Acesso Vitalício
               </Badge>
-              <h1 className="text-5xl md:text-7xl font-bold mb-4 uppercase bg-gradient-to-r from-[#FF7A33] via-[#FF4DD2] to-[#A020F0] bg-clip-text text-transparent">
-                {course.name}
+              <h1 className="text-4xl md:text-6xl font-bold mb-4 uppercase text-white">
+                {course.title}
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 mb-6">
                 {course.subtitle}
               </p>
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex items-center text-gray-300">
+                  <BookOpen className="h-5 w-5 mr-2 text-atlon-green" />
+                  <span>{course.totalModules} módulos</span>
+                </div>
+                <div className="flex items-center text-gray-300">
+                  <Play className="h-5 w-5 mr-2 text-atlon-green" />
+                  <span>{course.totalLessons} aulas</span>
+                </div>
+                <div className="flex items-center text-gray-300">
+                  <Clock className="h-5 w-5 mr-2 text-atlon-green" />
+                  <span>{Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span>
+                </div>
+              </div>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-[#A020F0] to-[#FF4DD2] hover:opacity-90 transition-opacity"
+                className="gradient-atlon hover:opacity-90 transition-opacity text-black font-bold"
+                onClick={() => modules.length > 0 && handleModuleClick(modules[0].id)}
               >
                 <Play className="mr-2 h-5 w-5" />
-                Continuar de onde parei
+                Começar Agora
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modules Section */}
+      {/* Course Content */}
       <main className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2 text-white uppercase">
-            Cursos de Design
-          </h2>
-          <p className="text-gray-400">Escolha um módulo para começar</p>
+        {/* About Section */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-4 text-white">Sobre o Curso</h2>
+          <Card className="bg-[#1A1A1A] border-atlon-green/10 p-6">
+            <p className="text-gray-300 text-lg leading-relaxed">{course.description}</p>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {modules.map(module => (
-            <ModuleCard
-              key={module.id}
-              module={module}
-              onClick={() => handleModuleClick(module.id)}
-            />
-          ))}
+        {/* Modules Section */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-white">Módulos do Curso</h2>
+          <div className="space-y-4">
+            {modules.map((module, index) => (
+              <Card
+                key={module.id}
+                className="bg-[#1A1A1A] border-atlon-green/10 hover:border-atlon-green/30 transition-all cursor-pointer card-glow"
+                onClick={() => handleModuleClick(module.id)}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <span className="text-atlon-green font-bold mr-3">Módulo {index + 1}</span>
+                        <Badge variant="outline" className="border-atlon-green/30 text-atlon-green">
+                          {module.totalLessons} aulas
+                        </Badge>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2">{module.title}</h3>
+                      <p className="text-gray-400">{module.description}</p>
+                    </div>
+                    <ChevronRight className="h-6 w-6 text-atlon-green ml-4 flex-shrink-0" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        {/* Bonus Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2 text-white uppercase">
-            Estratégias
-          </h2>
-          <p className="text-gray-400">Materiais complementares e bônus</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div
-              key={i}
-              className="aspect-video bg-gradient-to-br from-[#1A1A1A] to-[#0B0B0B] border border-white/10 rounded-lg flex items-center justify-center"
-            >
-              <Clock className="h-12 w-12 text-gray-600" />
+        {/* Instructor Section */}
+        <div>
+          <h2 className="text-3xl font-bold mb-6 text-white">Instrutor</h2>
+          <Card className="bg-[#1A1A1A] border-atlon-green/10 p-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-atlon-green-light to-atlon-green-dark flex items-center justify-center">
+                <span className="text-2xl font-bold text-black">A</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">{course.instructorName}</h3>
+                <p className="text-gray-400">Equipe de especialistas da Atlon</p>
+              </div>
             </div>
-          ))}
+          </Card>
         </div>
       </main>
     </div>

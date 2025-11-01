@@ -19,17 +19,41 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Timeout de segurança (30 segundos)
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      showError('O login está demorando muito. Tente novamente.');
+    }, 30000);
+
     try {
+      console.log('🚀 Iniciando processo de login...');
       const loggedInUser = await login(email, password);
+      
+      clearTimeout(timeoutId);
+      console.log('✅ Login bem-sucedido! Redirecionando...');
       showSuccess('Login realizado com sucesso!');
       
-      if (loggedInUser.role === 'admin') {
-        navigate('/admin');
+      // Pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        if (loggedInUser.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/meus-cursos');
+        }
+      }, 100);
+
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      console.error('❌ Erro no login:', error);
+      
+      // Mensagens de erro mais específicas
+      if (error.message?.includes('Invalid login credentials')) {
+        showError('E-mail ou senha incorretos. Verifique suas credenciais.');
+      } else if (error.message?.includes('Email not confirmed')) {
+        showError('Por favor, confirme seu e-mail antes de fazer login.');
       } else {
-        navigate('/meus-cursos');
+        showError(error.message || 'Erro ao fazer login. Tente novamente.');
       }
-    } catch (error) {
-      showError('Credenciais inválidas. Verifique seu e-mail e senha.');
     } finally {
       setLoading(false);
     }
@@ -80,6 +104,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
                 className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20 relative z-50"
               />
             </div>
@@ -92,6 +117,7 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
                 className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20 relative z-50"
               />
             </div>

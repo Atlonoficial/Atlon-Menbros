@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (authUser: SupabaseUser) => {
+  const fetchUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     console.log('👤 Buscando perfil para user_id:', authUser.id);
     
     try {
@@ -65,8 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Se o perfil não existe, tentar criar
       if (!profile) {
         console.warn('⚠️ Perfil não encontrado. Tentando criar...');
-        await createUserProfile(authUser);
-        return;
+        return await createUserProfile(authUser);
       }
 
       console.log('✅ Perfil encontrado:', profile);
@@ -90,22 +89,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(userData);
 
-      // Atualizar último login
-      await supabase
+      // Atualizar último login (não esperar)
+      supabase
         .from('profiles')
         .update({ last_login: new Date().toISOString() })
-        .eq('id', authUser.id);
+        .eq('id', authUser.id)
+        .then(() => console.log('✅ Último login atualizado'));
+
+      return userData;
 
     } catch (error) {
       console.error('❌ Erro fatal ao buscar perfil:', error);
       showError('Erro ao carregar perfil do usuário');
       await supabase.auth.signOut();
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const createUserProfile = async (authUser: SupabaseUser) => {
+  const createUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     console.log('🔨 Criando perfil para user_id:', authUser.id);
     
     try {
@@ -155,43 +158,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       setUser(userData);
+      return userData;
 
     } catch (error) {
       console.error('❌ Erro fatal ao criar perfil:', error);
       showError('Não foi possível criar seu perfil. Entre em contato com o suporte.');
       await supabase.auth.signOut();
-      throw error;
+      return null;
     }
   };
 
   const login = async (email: string, password: string): Promise<User> => {
     console.log('🔐 Tentando fazer login para:', email);
     
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      console.error('❌ Erro no login:', error);
+      if (error) {
+        console.error('❌ Erro no login:', error);
+        throw error;
+      }
+      
+      if (!data.user) {
+        console.error('❌ Usuário não encontrado após login');
+        throw new Error('Usuário não encontrado');
+      }
+
+      console.log('✅ Login no Supabase bem-sucedido');
+
+      // Buscar perfil (com fallback de criação) e aguardar o resultado
+      const userData = await fetchUserProfile(data.user);
+      
+      if (!userData) {
+        throw new Error('Erro ao carregar perfil');
+      }
+      
+      console.log('✅ Login completo! Usuário:', userData);
+      return userData;
+
+    } catch (error) {
+      console.error('❌ Erro no processo de login:', error);
       throw error;
     }
-    
-    if (!data.user) {
-      console.error('❌ Usuário não encontrado após login');
-      throw new Error('Usuário não encontrado');
-    }
-
-    console.log('✅ Login no Supabase bem-sucedido');
-
-    // Buscar perfil (com fallback de criação)
-    await fetchUserProfile(data.user);
-    
-    if (!user) {
-      throw new Error('Erro ao carregar perfil');
-    }
-    
-    return user;
   };
 
   const logout = async () => {

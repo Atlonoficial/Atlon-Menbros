@@ -37,20 +37,21 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden tech-grid">
-      {/* Efeitos de fundo futuristas */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Efeitos de fundo futuristas - z-index baixo */}
+      <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-atlon-green/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-atlon-green/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-atlon-green/5 rounded-full"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-atlon-green/5 rounded-full"></div>
       </div>
 
-      <Card className="w-full max-w-md bg-[#0A0A0A]/90 backdrop-blur-xl border-atlon-green/20 relative z-10 card-glow">
+      {/* Card com z-index alto para ficar acima dos efeitos */}
+      <Card className="w-full max-w-md bg-[#0A0A0A]/90 backdrop-blur-xl border-atlon-green/20 relative z-50 card-glow">
         <CardHeader className="space-y-4">
           <div className="flex justify-center mb-4 relative">
             <div className="relative group">
               <img 
-                src="/Logo perfil Atlon!.png" 
+                src="/atlon-logo-profile.png" 
                 alt="Atlon" 
                 className="h-20 w-20 transition-transform group-hover:scale-110 animate-float"
                 onError={(e) => {
@@ -68,7 +69,7 @@ const Login: React.FC = () => {
             Entre com suas credenciais para acessar
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-400">E-mail</Label>
@@ -79,7 +80,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20"
+                className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20 relative z-50"
               />
             </div>
             <div className="space-y-2">
@@ -91,7 +92,7 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20"
+                className="bg-[#060606] border-atlon-green/20 text-white focus:border-atlon-green/50 focus:ring-atlon-green/20 relative z-50"
               />
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -102,7 +103,7 @@ const Login: React.FC = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full gradient-atlon hover:opacity-90 transition-opacity text-black font-bold btn-neon relative overflow-hidden"
+              className="w-full gradient-atlon hover:opacity-90 transition-opacity text-black font-bold btn-neon relative overflow-hidden z-50"
             >
               {loading ? (
                 <>

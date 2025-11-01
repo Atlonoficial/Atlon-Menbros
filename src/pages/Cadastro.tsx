@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { showSuccess } from '@/utils/toast';
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
+import { Loader2 } from 'lucide-react';
 
 const Cadastro: React.FC = () => {
   const [name, setName] = useState('');
@@ -13,23 +15,56 @@ const Cadastro: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profession, setProfession] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    showSuccess('Cadastro realizado com sucesso!');
-    navigate('/login');
+    
+    if (password !== confirmPassword) {
+      showError('As senhas não coincidem');
+      return;
+    }
+
+    if (!profession) {
+      showError('Selecione sua profissão');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            profession
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      showSuccess('Cadastro realizado com sucesso! Verifique seu email.');
+      navigate('/login');
+    } catch (error: any) {
+      showError(error.message || 'Erro ao criar conta');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-[#0A0A0A] to-black p-4 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Background Effects - z-index baixo */}
+      <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-atlon-green/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-atlon-green/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <Card className="w-full max-w-md bg-[#1A1A1A]/80 backdrop-blur-xl border-atlon-green/10 relative z-10">
+      <Card className="w-full max-w-md bg-[#1A1A1A]/80 backdrop-blur-xl border-atlon-green/10 relative z-50">
         <CardHeader className="space-y-4">
           <div className="flex justify-center mb-4">
             <img 
@@ -48,7 +83,7 @@ const Cadastro: React.FC = () => {
             Preencha os dados para criar sua conta
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-gray-300">Nome Completo</Label>
@@ -59,7 +94,7 @@ const Cadastro: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50"
+                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50 relative z-50"
               />
             </div>
             <div className="space-y-2">
@@ -71,16 +106,16 @@ const Cadastro: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50"
+                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50 relative z-50"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="profession" className="text-gray-300">Profissão</Label>
               <Select value={profession} onValueChange={setProfession}>
-                <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50">
+                <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50 relative z-50">
                   <SelectValue placeholder="Selecione sua profissão" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
+                <SelectContent className="bg-[#1A1A1A] border-atlon-green/10 z-[100]">
                   <SelectItem value="personal_trainer">Personal Trainer</SelectItem>
                   <SelectItem value="nutritionist">Nutricionista</SelectItem>
                 </SelectContent>
@@ -95,7 +130,8 @@ const Cadastro: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50"
+                minLength={6}
+                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50 relative z-50"
               />
             </div>
             <div className="space-y-2">
@@ -107,14 +143,23 @@ const Cadastro: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50"
+                minLength={6}
+                className="bg-[#0B0B0B] border-atlon-green/10 text-white focus:border-atlon-green/50 relative z-50"
               />
             </div>
             <Button
               type="submit"
-              className="w-full gradient-atlon hover:opacity-90 transition-opacity text-black font-bold"
+              disabled={loading}
+              className="w-full gradient-atlon hover:opacity-90 transition-opacity text-black font-bold relative z-50"
             >
-              Criar Conta
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando conta...
+                </>
+              ) : (
+                'Criar Conta'
+              )}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm text-gray-400">

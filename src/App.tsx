@@ -14,6 +14,8 @@ import Ofertas from "./pages/Ofertas";
 import Suporte from "./pages/Suporte";
 import Dashboard from "./pages/admin/Dashboard";
 import Cursos from "./pages/admin/Cursos";
+import Modulos from "./pages/admin/Modulos";
+import Aulas from "./pages/admin/Aulas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,8 +57,8 @@ const App = () => (
             {/* Rotas do Admin */}
             <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/cursos" element={<ProtectedRoute adminOnly><Cursos /></ProtectedRoute>} />
-            <Route path="/admin/modulos" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
-            <Route path="/admin/aulas" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin/modulos" element={<ProtectedRoute adminOnly><Modulos /></ProtectedRoute>} />
+            <Route path="/admin/aulas" element={<ProtectedRoute adminOnly><Aulas /></ProtectedRoute>} />
             <Route path="/admin/alunos" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/financeiro" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/configuracoes" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />

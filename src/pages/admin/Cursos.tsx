@@ -16,14 +16,14 @@ import { showSuccess } from '@/utils/toast';
 const Cursos: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     subtitle: '',
     description: '',
     coverImage: '',
     bannerImage: '',
     category: '',
     level: 'iniciante',
-    status: 'rascunho'
+    status: 'draft'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,14 +31,14 @@ const Cursos: React.FC = () => {
     showSuccess('Curso salvo com sucesso!');
     setIsDialogOpen(false);
     setFormData({
-      name: '',
+      title: '',
       subtitle: '',
       description: '',
       coverImage: '',
       bannerImage: '',
       category: '',
       level: 'iniciante',
-      status: 'rascunho'
+      status: 'draft'
     });
   };
 
@@ -69,11 +69,11 @@ const Cursos: React.FC = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-300">Nome do Curso</Label>
+                  <Label htmlFor="title" className="text-gray-300">Nome do Curso</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
                     className="bg-[#0B0B0B] border-white/10 text-white"
                     required
                   />
@@ -157,8 +157,8 @@ const Cursos: React.FC = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-white/10">
-                        <SelectItem value="rascunho">Rascunho</SelectItem>
-                        <SelectItem value="publicado">Publicado</SelectItem>
+                        <SelectItem value="draft">Rascunho</SelectItem>
+                        <SelectItem value="published">Publicado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -176,17 +176,17 @@ const Cursos: React.FC = () => {
           {mockCourses.map((course) => (
             <Card key={course.id} className="bg-[#1A1A1A] border-white/10 overflow-hidden">
               <div className="aspect-video relative">
-                <img src={course.coverImage} alt={course.name} className="w-full h-full object-cover" />
+                <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
                 <Badge className={`absolute top-2 right-2 ${
-                  course.status === 'publicado' 
+                  course.status === 'published' 
                     ? 'bg-green-500/20 text-green-500 border-green-500/50' 
                     : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50'
                 }`}>
-                  {course.status}
+                  {course.status === 'published' ? 'Publicado' : 'Rascunho'}
                 </Badge>
               </div>
               <CardHeader>
-                <CardTitle className="text-white">{course.name}</CardTitle>
+                <CardTitle className="text-white">{course.title}</CardTitle>
                 <p className="text-sm text-gray-400">{course.subtitle}</p>
               </CardHeader>
               <CardContent>

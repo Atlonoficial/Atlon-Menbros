@@ -68,7 +68,7 @@ const ModuloAulas: React.FC = () => {
               </Button>
               
               <div className="text-sm text-gray-400 mb-2">
-                Curso &gt; {module.name} &gt; {currentLesson.title}
+                Curso &gt; {module.title} &gt; {currentLesson.title}
               </div>
               
               <h1 className="text-3xl font-bold text-white mb-4">
@@ -140,7 +140,7 @@ const ModuloAulas: React.FC = () => {
           <div className="lg:w-96">
             <Card className="bg-[#1A1A1A] border-white/10 sticky top-24">
               <div className="p-4 border-b border-white/10">
-                <h3 className="font-bold text-white">{module.name}</h3>
+                <h3 className="font-bold text-white">{module.title}</h3>
                 <p className="text-sm text-gray-400">
                   {completedLessons.length} de {lessons.length} aulas concluídas
                 </p>

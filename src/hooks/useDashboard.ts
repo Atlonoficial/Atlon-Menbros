@@ -10,11 +10,8 @@ interface DashboardStats {
 
 interface RecentActivity {
   id: string;
-  type: 'enrollment' | 'completion' | 'new_course';
   message: string;
   timestamp: string;
-  userId?: string;
-  userName?: string;
 }
 
 export const useDashboardStats = () => {
@@ -28,11 +25,12 @@ export const useDashboardStats = () => {
         throw error;
       }
 
+      const statsData = data as any;
       return {
-        totalCourses: data.total_courses || 0,
-        totalStudents: data.total_students || 0,
-        totalLessons: data.total_lessons || 0,
-        completionRate: Math.round(data.avg_completion_rate || 0),
+        totalCourses: statsData.total_courses || 0,
+        totalStudents: statsData.total_students || 0,
+        totalLessons: statsData.total_lessons || 0,
+        completionRate: Math.round(statsData.avg_completion_rate || 0),
       };
     },
   });
@@ -41,40 +39,15 @@ export const useDashboardStats = () => {
 export const useRecentActivity = () => {
   return useQuery({
     queryKey: ['recent-activity'],
-    queryFn: async () => {
-      const activities: RecentActivity[] = [];
+    queryFn: async (): Promise<RecentActivity[]> => {
+      const { data, error } = await supabase.rpc('get_recent_activity');
 
-      // Matrículas recentes
-      const { data: enrollments } = await supabase
-        .from('enrollments')
-        .select(`
-          id,
-          enrolled_at,
-          user_id,
-          course_id,
-          profiles!enrollments_user_id_fkey(name),
-          courses!enrollments_course_id_fkey(title)
-        `)
-        .order('enrolled_at', { ascending: false })
-        .limit(5);
-
-      if (enrollments) {
-        enrollments.forEach((enrollment: any) => {
-          activities.push({
-            id: enrollment.id,
-            type: 'enrollment',
-            message: `${enrollment.profiles?.name || 'Aluno'} se matriculou em ${enrollment.courses?.title || 'um curso'}`,
-            timestamp: enrollment.enrolled_at,
-            userId: enrollment.user_id,
-            userName: enrollment.profiles?.name,
-          });
-        });
+      if (error) {
+        console.error('Erro ao buscar atividades recentes:', error);
+        throw error;
       }
-
-      // Ordenar por data
-      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-      return activities.slice(0, 10);
+      
+      return data || [];
     },
   });
 };

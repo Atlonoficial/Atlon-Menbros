@@ -125,9 +125,14 @@ export const Header: React.FC = () => {
                         </Badge>
                       )}
                     </div>
-                    <DropdownMenuItem className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Meu Perfil
+                    <DropdownMenuItem 
+                      asChild
+                      className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer"
+                    >
+                      <Link to="/perfil">
+                        <User className="mr-2 h-4 w-4" />
+                        Meu Perfil
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer">
                       <BookOpen className="mr-2 h-4 w-4" />

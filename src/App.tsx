@@ -7,11 +7,14 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import AtualizarSenha from "./pages/AtualizarSenha";
 import MeusCursos from "./pages/MeusCursos";
 import CursoDetalhes from "./pages/CursoDetalhes";
 import ModuloAulas from "./pages/ModuloAulas";
 import Ofertas from "./pages/Ofertas";
 import Suporte from "./pages/Suporte";
+import Perfil from "./pages/Perfil";
 import Dashboard from "./pages/admin/Dashboard";
 import Cursos from "./pages/admin/Cursos";
 import Modulos from "./pages/admin/Modulos";
@@ -25,8 +28,6 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) => {
   const { isAuthenticated, user, loading } = useAuth();
   
-  // Enquanto a autenticação está sendo verificada, não renderize nada.
-  // O AuthProvider já mostra um loader global.
   if (loading) {
     return null;
   }
@@ -50,9 +51,12 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Rotas Públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+            <Route path="/atualizar-senha" element={<AtualizarSenha />} />
             
             {/* Rotas do Aluno */}
             <Route path="/meus-cursos" element={<ProtectedRoute><MeusCursos /></ProtectedRoute>} />
@@ -60,6 +64,7 @@ const App = () => (
             <Route path="/curso/:courseId/modulo/:moduleId" element={<ProtectedRoute><ModuloAulas /></ProtectedRoute>} />
             <Route path="/ofertas" element={<ProtectedRoute><Ofertas /></ProtectedRoute>} />
             <Route path="/suporte" element={<ProtectedRoute><Suporte /></ProtectedRoute>} />
+            <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
             
             {/* Rotas do Admin */}
             <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />

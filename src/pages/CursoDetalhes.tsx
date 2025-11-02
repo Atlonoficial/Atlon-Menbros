@@ -7,9 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCourse } from '@/hooks/useCourses';
 import { useModules } from '@/hooks/useModules';
-import { useIsEnrolled } from '@/hooks/useEnrollments';
+import { useIsEnrolled, useEnrollCourse } from '@/hooks/useEnrollments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Play, Clock, Award, BookOpen, ChevronRight, Lock } from 'lucide-react';
+import { Play, Clock, Award, BookOpen, ChevronRight, Lock, Loader2 } from 'lucide-react';
 
 const CursoDetalhes: React.FC = () => {
   const { courseId } = useParams();
@@ -19,8 +19,21 @@ const CursoDetalhes: React.FC = () => {
   const { data: course, isLoading: courseLoading } = useCourse(courseId);
   const { data: modules, isLoading: modulesLoading } = useModules(courseId);
   const { data: isEnrolled, isLoading: enrollmentLoading } = useIsEnrolled(user?.id, courseId);
+  const enrollCourse = useEnrollCourse();
 
   const isLoading = courseLoading || modulesLoading || enrollmentLoading;
+
+  const handleModuleClick = (moduleId: string) => {
+    if (isEnrolled) {
+      navigate(`/curso/${courseId}/modulo/${moduleId}`);
+    }
+  };
+
+  const handleEnroll = async () => {
+    if (user && courseId) {
+      await enrollCourse.mutateAsync({ userId: user.id, courseId });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -46,12 +59,6 @@ const CursoDetalhes: React.FC = () => {
       </div>
     );
   }
-
-  const handleModuleClick = (moduleId: string) => {
-    if (isEnrolled) {
-      navigate(`/curso/${courseId}/modulo/${moduleId}`);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0A0A] to-black">
@@ -100,13 +107,26 @@ const CursoDetalhes: React.FC = () => {
                   onClick={() => modules && modules.length > 0 && handleModuleClick(modules[0].id)}
                 >
                   <Play className="mr-2 h-5 w-5" />
-                  Começar Agora
+                  Continuar Curso
                 </Button>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Lock className="h-6 w-6 text-gray-400" />
-                  <p className="text-gray-400">Entre em contato com o suporte para ter acesso a este curso</p>
-                </div>
+                <Button
+                  size="lg"
+                  className="gradient-atlon hover:opacity-90 transition-opacity text-black font-bold"
+                  onClick={handleEnroll}
+                  disabled={enrollCourse.isPending}
+                >
+                  {enrollCourse.isPending ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 h-5 w-5" />
+                  )}
+                  {enrollCourse.isPending 
+                    ? 'Processando...' 
+                    : course.isPremium 
+                    ? `Comprar - R$ ${course.price}` 
+                    : 'Acessar Grátis'}
+                </Button>
               )}
             </div>
           </div>
@@ -137,8 +157,10 @@ const CursoDetalhes: React.FC = () => {
               {modules.map((module, index) => (
                 <Card
                   key={module.id}
-                  className={`bg-[#1A1A1A] border-atlon-green/10 hover:border-atlon-green/30 transition-all card-glow ${
-                    isEnrolled && !module.isLocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                  className={`bg-[#1A1A1A] border-atlon-green/10 transition-all ${
+                    isEnrolled && !module.isLocked 
+                      ? 'cursor-pointer hover:border-atlon-green/30 card-glow' 
+                      : 'cursor-not-allowed opacity-60'
                   }`}
                   onClick={() => isEnrolled && !module.isLocked && handleModuleClick(module.id)}
                 >
@@ -165,8 +187,10 @@ const CursoDetalhes: React.FC = () => {
                           </p>
                         )}
                       </div>
-                      {isEnrolled && !module.isLocked && (
+                      {isEnrolled && !module.isLocked ? (
                         <ChevronRight className="h-6 w-6 text-atlon-green ml-4 flex-shrink-0" />
+                      ) : (
+                        <Lock className="h-6 w-6 text-gray-500 ml-4 flex-shrink-0" />
                       )}
                     </div>
                   </div>

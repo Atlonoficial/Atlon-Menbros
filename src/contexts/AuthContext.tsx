@@ -88,28 +88,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     setLoading(true);
-    console.log('[Auth] AuthProvider montado. Verificando sessão...');
-    
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('[Auth] Sessão inicial:', session ? 'Encontrada' : 'Não encontrada');
-      if (session?.user) {
-        await fetchUserProfile(session.user);
-      }
-    }).catch(err => {
-      console.error("[Auth] Erro ao buscar sessão inicial:", err);
-      showError("Erro ao verificar sua sessão.");
-    }).finally(() => {
-      setLoading(false);
-    });
+    console.log('[Auth] AuthProvider montado. Aguardando onAuthStateChange...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Evento de autenticação recebido:', event);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        setLoading(true);
-        await fetchUserProfile(session.user);
+      console.log(`[Auth] Evento recebido: ${event}`);
+
+      // Este evento é a nossa fonte de verdade para o estado inicial.
+      if (event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          console.log('[Auth] Sessão inicial encontrada. Buscando perfil...');
+          await fetchUserProfile(session.user);
+        } else {
+          console.log('[Auth] Nenhuma sessão inicial. Usuário deslogado.');
+          setUser(null);
+        }
+        // Esta é a correção crucial: garantimos que o loading termine após a verificação inicial.
         setLoading(false);
-      } else if (event === 'SIGNED_OUT') {
+      } 
+      else if (event === 'SIGNED_IN') {
+        if (session?.user) {
+          console.log('[Auth] Usuário logado. Buscando perfil...');
+          await fetchUserProfile(session.user);
+        }
+      } 
+      else if (event === 'SIGNED_OUT') {
+        console.log('[Auth] Usuário deslogado.');
         setUser(null);
       }
     });
@@ -122,13 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<void> => {
     console.log(`[Auth] Tentando login para: ${email}`);
-    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setLoading(false);
       console.error('[Auth] Erro no login:', error);
       throw error;
     }
+    // onAuthStateChange irá lidar com a atualização do estado do usuário.
   };
 
   const logout = async () => {

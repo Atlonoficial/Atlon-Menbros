@@ -3,6 +3,7 @@ import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { showError } from '@/utils/toast';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log(`[Auth] Iniciando busca de perfil para user_id: ${authUser.id}`);
     
     const MAX_RETRIES = 4;
-    const RETRY_DELAY = 750; // Aumentado para 750ms para dar mais margem
+    const RETRY_DELAY = 750;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       const { data: profile, error } = await supabase
@@ -52,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setUser(userData);
 
-        // Atualiza o último login em segundo plano
         supabase
           .from('profiles')
           .update({ last_login: new Date().toISOString() })
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return userData;
       }
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = "exact one row not found"
+      if (error && error.code !== 'PGRST116') {
         console.error(`[Auth] Erro inesperado na busca (tentativa ${attempt}):`, error);
         showError('Ocorreu um erro inesperado ao carregar seu perfil.');
         await supabase.auth.signOut();
@@ -73,15 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // Se o perfil não foi encontrado (PGRST116), espera e tenta novamente
       if (attempt < MAX_RETRIES) {
         console.warn(`[Auth] ⚠️ Perfil não encontrado na tentativa ${attempt}. Tentando novamente em ${RETRY_DELAY}ms...`);
         await new Promise(res => setTimeout(res, RETRY_DELAY));
       }
     }
 
-    // Se o loop terminar sem encontrar o perfil
-    console.error(`[Auth] ❌ Perfil não encontrado após ${MAX_RETRIES} tentativas. O gatilho de criação de perfil pode ter falhado.`);
+    console.error(`[Auth] ❌ Perfil não encontrado após ${MAX_RETRIES} tentativas.`);
     showError('Não foi possível carregar os dados do seu perfil. Por favor, tente novamente ou entre em contato com o suporte.');
     await supabase.auth.signOut();
     setUser(null);
@@ -97,6 +95,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         await fetchUserProfile(session.user);
       }
+    }).catch(err => {
+      console.error("[Auth] Erro ao buscar sessão inicial:", err);
+      showError("Erro ao verificar sua sessão.");
+    }).finally(() => {
       setLoading(false);
     });
 
@@ -127,7 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('[Auth] Erro no login:', error);
       throw error;
     }
-    // onAuthStateChange irá lidar com o resto
   };
 
   const logout = async () => {
@@ -138,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
-      {!loading && children}
+      {loading ? <FullScreenLoader /> : children}
     </AuthContext.Provider>
   );
 };

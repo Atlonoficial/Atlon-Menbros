@@ -23,7 +23,13 @@ const queryClient = new QueryClient();
 
 // Componente para proteger rotas
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  // Enquanto a autenticação está sendo verificada, não renderize nada.
+  // O AuthProvider já mostra um loader global.
+  if (loading) {
+    return null;
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

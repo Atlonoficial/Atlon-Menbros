@@ -61,7 +61,9 @@ const Alunos: React.FC = () => {
 
     await updateStudent.mutateAsync({
       id: selectedStudent.id,
-      ...editFormData,
+      name: editFormData.name,
+      profession: (editFormData.profession as 'personal_trainer' | 'nutritionist') || undefined,
+      appPlan: (editFormData.appPlan as 'basic' | 'pro' | 'premium') || undefined,
     });
     setIsEditDialogOpen(false);
     setSelectedStudent(null);

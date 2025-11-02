@@ -20,40 +20,20 @@ interface RecentActivity {
 export const useDashboardStats = () => {
   return useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      // Total de cursos
-      const { count: coursesCount } = await supabase
-        .from('courses')
-        .select('*', { count: 'exact', head: true });
+    queryFn: async (): Promise<DashboardStats> => {
+      const { data, error } = await supabase.rpc('get_dashboard_stats').single();
 
-      // Total de alunos
-      const { count: studentsCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'student');
-
-      // Total de aulas
-      const { count: lessonsCount } = await supabase
-        .from('lessons')
-        .select('*', { count: 'exact', head: true });
-
-      // Taxa de conclusão média
-      const { data: progressData } = await supabase
-        .from('student_progress')
-        .select('progress_percentage');
-
-      const avgCompletion = progressData && progressData.length > 0
-        ? Math.round(
-            progressData.reduce((acc, curr) => acc + (curr.progress_percentage || 0), 0) / progressData.length
-          )
-        : 0;
+      if (error) {
+        console.error('Erro ao buscar estatísticas do dashboard:', error);
+        throw error;
+      }
 
       return {
-        totalCourses: coursesCount || 0,
-        totalStudents: studentsCount || 0,
-        totalLessons: lessonsCount || 0,
-        completionRate: avgCompletion,
-      } as DashboardStats;
+        totalCourses: data.total_courses || 0,
+        totalStudents: data.total_students || 0,
+        totalLessons: data.total_lessons || 0,
+        completionRate: Math.round(data.avg_completion_rate || 0),
+      };
     },
   });
 };

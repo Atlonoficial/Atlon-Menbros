@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useForm, Controller } from 'react-hook-form';
 import { useUpdateProfile, useUploadAvatar } from '@/hooks/useProfile';
 import { Loader2, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const Perfil: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -32,7 +33,11 @@ const Perfil: React.FC = () => {
 
   const onSubmit = async (data: { name: string; profession: string }) => {
     if (!user) return;
-    await updateProfile.mutateAsync({ id: user.id, ...data });
+    await updateProfile.mutateAsync({ 
+      id: user.id, 
+      name: data.name,
+      profession: data.profession as 'personal_trainer' | 'nutritionist'
+    });
     await refreshUser();
   };
 

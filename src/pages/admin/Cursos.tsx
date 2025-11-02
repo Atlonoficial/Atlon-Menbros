@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAllCourses, useCreateCourse, useUpdateCourse, useDeleteCourse } from '@/hooks/useCourses';
-import { Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Eye, BookOpen } from 'lucide-react';
 import { Course } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,7 +28,18 @@ const Cursos: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    subtitle: string;
+    description: string;
+    coverImage: string;
+    bannerImage: string;
+    category: 'dashboard' | 'marketing' | 'vendas' | 'gestao' | 'tecnico';
+    level: 'iniciante' | 'intermediario' | 'avancado';
+    status: 'draft' | 'published';
+    isPremium: boolean;
+    price: number;
+  }>({
     title: '',
     subtitle: '',
     description: '',
@@ -205,7 +216,7 @@ const Cursos: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category" className="text-gray-300">Categoria</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value as typeof formData.category})}>
                       <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -221,7 +232,7 @@ const Cursos: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="level" className="text-gray-300">Nível</Label>
-                    <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value})}>
+                    <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value as typeof formData.level})}>
                       <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -235,7 +246,7 @@ const Cursos: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="status" className="text-gray-300">Status</Label>
-                    <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                    <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as typeof formData.status})}>
                       <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -477,7 +488,7 @@ const Cursos: React.FC = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-category" className="text-gray-300">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value as typeof formData.category})}>
                     <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -493,7 +504,7 @@ const Cursos: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-level" className="text-gray-300">Nível</Label>
-                  <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value})}>
+                  <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value as typeof formData.level})}>
                     <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -507,7 +518,7 @@ const Cursos: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-status" className="text-gray-300">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as typeof formData.status})}>
                     <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
                       <SelectValue />
                     </SelectTrigger>

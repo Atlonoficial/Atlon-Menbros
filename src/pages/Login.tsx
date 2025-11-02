@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,41 +12,32 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('✅ Login.tsx: Autenticado! Redirecionando...');
+      showSuccess('Login realizado com sucesso!');
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/meus-cursos', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Timeout de segurança (30 segundos)
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      showError('O login está demorando muito. Tente novamente.');
-    }, 30000);
-
     try {
-      console.log('🚀 Iniciando processo de login...');
-      const loggedInUser = await login(email, password);
-      
-      clearTimeout(timeoutId);
-      console.log('✅ Login bem-sucedido! Redirecionando...');
-      showSuccess('Login realizado com sucesso!');
-      
-      // Pequeno delay para garantir que o estado foi atualizado
-      setTimeout(() => {
-        if (loggedInUser.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/meus-cursos');
-        }
-      }, 100);
-
+      await login(email, password);
+      // Em caso de sucesso, o useEffect irá acionar. Deixamos loading=true.
     } catch (error: any) {
-      clearTimeout(timeoutId);
+      setLoading(false); // Definir loading como false apenas em caso de erro
       console.error('❌ Erro no login:', error);
       
-      // Mensagens de erro mais específicas
       if (error.message?.includes('Invalid login credentials')) {
         showError('E-mail ou senha incorretos. Verifique suas credenciais.');
       } else if (error.message?.includes('Email not confirmed')) {
@@ -54,8 +45,6 @@ const Login: React.FC = () => {
       } else {
         showError(error.message || 'Erro ao fazer login. Tente novamente.');
       }
-    } finally {
-      setLoading(false);
     }
   };
 

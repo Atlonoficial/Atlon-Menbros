@@ -4,15 +4,35 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { mockCourses, mockModules } from '@/data/mockData';
-import { Play, Clock, Award, BookOpen, ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCourse } from '@/hooks/useCourses';
+import { useModules } from '@/hooks/useModules';
+import { useIsEnrolled } from '@/hooks/useEnrollments';
+import { useAuth } from '@/contexts/AuthContext';
+import { Play, Clock, Award, BookOpen, ChevronRight, Lock } from 'lucide-react';
 
 const CursoDetalhes: React.FC = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
-  const course = mockCourses.find(c => c.id === courseId);
-  const modules = mockModules.filter(m => m.courseId === courseId);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: modules, isLoading: modulesLoading } = useModules(courseId);
+  const { data: isEnrolled, isLoading: enrollmentLoading } = useIsEnrolled(user?.id, courseId);
+
+  const isLoading = courseLoading || modulesLoading || enrollmentLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0A0A] to-black">
+        <Header />
+        <div className="container mx-auto px-4 pt-24 pb-12">
+          <Skeleton className="h-96 w-full bg-gray-700 mb-8" />
+          <Skeleton className="h-64 w-full bg-gray-700" />
+        </div>
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -28,7 +48,9 @@ const CursoDetalhes: React.FC = () => {
   }
 
   const handleModuleClick = (moduleId: string) => {
-    navigate(`/curso/${courseId}/modulo/${moduleId}`);
+    if (isEnrolled) {
+      navigate(`/curso/${courseId}/modulo/${moduleId}`);
+    }
   };
 
   return (
@@ -49,7 +71,7 @@ const CursoDetalhes: React.FC = () => {
             <div className="max-w-3xl">
               <Badge className="mb-4 bg-atlon-green/20 text-atlon-green border-atlon-green/50">
                 <Award className="mr-2 h-4 w-4" />
-                Acesso Vitalício
+                {isEnrolled ? 'Matriculado' : 'Acesso Vitalício'}
               </Badge>
               <h1 className="text-4xl md:text-6xl font-bold mb-4 uppercase text-white">
                 {course.title}
@@ -71,14 +93,21 @@ const CursoDetalhes: React.FC = () => {
                   <span>{Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span>
                 </div>
               </div>
-              <Button
-                size="lg"
-                className="gradient-atlon hover:opacity-90 transition-opacity text-black font-bold"
-                onClick={() => modules.length > 0 && handleModuleClick(modules[0].id)}
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Começar Agora
-              </Button>
+              {isEnrolled ? (
+                <Button
+                  size="lg"
+                  className="gradient-atlon hover:opacity-90 transition-opacity text-black font-bold"
+                  onClick={() => modules && modules.length > 0 && handleModuleClick(modules[0].id)}
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Começar Agora
+                </Button>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <Lock className="h-6 w-6 text-gray-400" />
+                  <p className="text-gray-400">Entre em contato com o suporte para ter acesso a este curso</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -97,31 +126,62 @@ const CursoDetalhes: React.FC = () => {
         {/* Modules Section */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-white">Módulos do Curso</h2>
-          <div className="space-y-4">
-            {modules.map((module, index) => (
-              <Card
-                key={module.id}
-                className="bg-[#1A1A1A] border-atlon-green/10 hover:border-atlon-green/30 transition-all cursor-pointer card-glow"
-                onClick={() => handleModuleClick(module.id)}
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <span className="text-atlon-green font-bold mr-3">Módulo {index + 1}</span>
-                        <Badge variant="outline" className="border-atlon-green/30 text-atlon-green">
-                          {module.totalLessons} aulas
-                        </Badge>
+          {modulesLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full bg-gray-700" />
+              ))}
+            </div>
+          ) : modules && modules.length > 0 ? (
+            <div className="space-y-4">
+              {modules.map((module, index) => (
+                <Card
+                  key={module.id}
+                  className={`bg-[#1A1A1A] border-atlon-green/10 hover:border-atlon-green/30 transition-all card-glow ${
+                    isEnrolled && !module.isLocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                  }`}
+                  onClick={() => isEnrolled && !module.isLocked && handleModuleClick(module.id)}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <span className="text-atlon-green font-bold mr-3">Módulo {index + 1}</span>
+                          <Badge variant="outline" className="border-atlon-green/30 text-atlon-green">
+                            {module.totalLessons} aulas
+                          </Badge>
+                          {module.isLocked && (
+                            <Badge className="ml-2 bg-red-500/20 text-red-400 border-red-500/50">
+                              <Lock className="h-3 w-3 mr-1" />
+                              Bloqueado
+                            </Badge>
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">{module.title}</h3>
+                        <p className="text-gray-400">{module.description}</p>
+                        {module.isLocked && module.unlockCondition && (
+                          <p className="text-sm text-yellow-500 mt-2">
+                            🔒 {module.unlockCondition}
+                          </p>
+                        )}
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-2">{module.title}</h3>
-                      <p className="text-gray-400">{module.description}</p>
+                      {isEnrolled && !module.isLocked && (
+                        <ChevronRight className="h-6 w-6 text-atlon-green ml-4 flex-shrink-0" />
+                      )}
                     </div>
-                    <ChevronRight className="h-6 w-6 text-atlon-green ml-4 flex-shrink-0" />
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-[#1A1A1A] border-atlon-green/10 p-12">
+              <div className="text-center">
+                <BookOpen className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Nenhum módulo disponível</h3>
+                <p className="text-gray-400">Este curso ainda não possui módulos cadastrados</p>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Instructor Section */}

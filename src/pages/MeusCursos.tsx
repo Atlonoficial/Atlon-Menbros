@@ -2,21 +2,31 @@ import React from 'react';
 import { Header } from '@/components/Header';
 import { CourseCard } from '@/components/CourseCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockCourses, mockCourseAccess, mockProgress } from '@/data/mockData';
-import { BookOpen, TrendingUp } from 'lucide-react';
+import { useUserEnrollments } from '@/hooks/useEnrollments';
+import { useCourses } from '@/hooks/useCourses';
+import { useCourseProgress } from '@/hooks/useProgress';
+import { BookOpen, TrendingUp, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MeusCursos: React.FC = () => {
   const { user } = useAuth();
+  const { data: enrollments, isLoading: enrollmentsLoading } = useUserEnrollments(user?.id);
+  const { data: allCourses, isLoading: coursesLoading } = useCourses();
 
-  const userCourses = mockCourses.filter(course =>
-    mockCourseAccess.some(access => access.userId === user?.id && access.courseId === course.id)
-  );
+  // Filtrar cursos em que o usuário está matriculado
+  const userCourses = allCourses?.filter(course =>
+    enrollments?.some(enrollment => enrollment.courseId === course.id)
+  ) || [];
 
+  const isLoading = enrollmentsLoading || coursesLoading;
+
+  // Calcular progresso médio
   const totalProgress = userCourses.length > 0
     ? Math.round(
         userCourses.reduce((acc, course) => {
-          const progress = mockProgress.find(p => p.courseId === course.id && p.userId === user?.id);
-          return acc + (progress?.progressPercentage || 0);
+          // Aqui você pode buscar o progresso real de cada curso
+          return acc + 0; // Por enquanto 0, vamos implementar depois
         }, 0) / userCourses.length
       )
     : 0;
@@ -39,7 +49,11 @@ const MeusCursos: React.FC = () => {
           <div className="bg-[#1A1A1A] border border-atlon-green/10 rounded-lg p-6 card-glow">
             <div className="flex items-center justify-between mb-4">
               <BookOpen className="h-8 w-8 text-atlon-green" />
-              <span className="text-3xl font-bold text-white">{userCourses.length}</span>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 bg-gray-700" />
+              ) : (
+                <span className="text-3xl font-bold text-white">{userCourses.length}</span>
+              )}
             </div>
             <p className="text-gray-400">Cursos Matriculados</p>
           </div>
@@ -47,7 +61,11 @@ const MeusCursos: React.FC = () => {
           <div className="bg-[#1A1A1A] border border-atlon-green/10 rounded-lg p-6 card-glow">
             <div className="flex items-center justify-between mb-4">
               <TrendingUp className="h-8 w-8 text-atlon-green" />
-              <span className="text-3xl font-bold text-white">{totalProgress}%</span>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 bg-gray-700" />
+              ) : (
+                <span className="text-3xl font-bold text-white">{totalProgress}%</span>
+              )}
             </div>
             <p className="text-gray-400">Progresso Médio</p>
           </div>
@@ -55,17 +73,35 @@ const MeusCursos: React.FC = () => {
           <div className="bg-[#1A1A1A] border border-atlon-green/10 rounded-lg p-6 card-glow">
             <div className="flex items-center justify-between mb-4">
               <div className="text-3xl">🔥</div>
-              <span className="text-3xl font-bold text-white">{user?.streak || 0}</span>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 bg-gray-700" />
+              ) : (
+                <span className="text-3xl font-bold text-white">{user?.streak || 0}</span>
+              )}
             </div>
             <p className="text-gray-400">Dias Consecutivos</p>
           </div>
         </div>
 
         {/* Courses Grid */}
-        {userCourses.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="bg-[#1A1A1A] border-atlon-green/10">
+                <Skeleton className="aspect-video w-full bg-gray-700" />
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-3/4 bg-gray-700 mb-2" />
+                  <Skeleton className="h-4 w-full bg-gray-700 mb-4" />
+                  <Skeleton className="h-10 w-full bg-gray-700" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : userCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userCourses.map(course => {
-              const progress = mockProgress.find(p => p.courseId === course.id && p.userId === user?.id);
+              // Buscar progresso do curso (implementaremos depois)
+              const progress = undefined;
               return <CourseCard key={course.id} course={course} progress={progress} />;
             })}
           </div>

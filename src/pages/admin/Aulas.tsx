@@ -77,9 +77,6 @@ const Aulas: React.FC = () => {
       .upload(filePath, videoFile, {
         cacheControl: '3600',
         upsert: false,
-        onProgress: (event) => {
-          setUploadProgress((event.loaded / event.total) * 100);
-        },
       });
 
     setUploading(false);

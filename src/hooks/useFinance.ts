@@ -36,13 +36,13 @@ export const useTransactions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('enrollments')
-        .select('id, enrolled_at, profiles(name), courses(title, price)')
+        .select('id, enrolled_at, profiles!inner(name), courses!inner(title, price)')
         .eq('payment_status', 'paid')
         .order('enrolled_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      return data as Transaction[];
+      return data as unknown as Transaction[];
     },
   });
 };

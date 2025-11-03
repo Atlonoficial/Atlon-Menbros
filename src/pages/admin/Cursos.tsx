@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAllCourses, useCreateCourse, useUpdateCourse, useDeleteCourse } from '@/hooks/useCourses';
-import { Plus, Edit, Trash2, Users, Eye, BookOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Eye, Upload, Video } from 'lucide-react';
 import { Course } from '@/types';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Cursos: React.FC = () => {
   const navigate = useNavigate();
@@ -34,23 +35,63 @@ const Cursos: React.FC = () => {
     description: string;
     coverImage: string;
     bannerImage: string;
+    bannerVideo?: string | null;
+    bannerKind: 'image' | 'video';
     category: 'dashboard' | 'marketing' | 'vendas' | 'gestao' | 'tecnico';
     level: 'iniciante' | 'intermediario' | 'avancado';
     status: 'draft' | 'published';
     isPremium: boolean;
     price: number;
+    kiwifyProductId?: string;
   }>({
     title: '',
     subtitle: '',
     description: '',
     coverImage: '',
     bannerImage: '',
+    bannerVideo: null,
+    bannerKind: 'image',
     category: 'dashboard',
     level: 'iniciante',
     status: 'draft',
     isPremium: false,
     price: 0,
+    kiwifyProductId: '',
   });
+
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+
+  const uploadCover = async () => {
+    if (!coverFile) return;
+    setUploadingCover(true);
+    const ext = coverFile.name.split('.').pop();
+    const path = `covers/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('course-assets').upload(path, coverFile);
+    setUploadingCover(false);
+    if (error) return;
+    const { data: { publicUrl } } = supabase.storage.from('course-assets').getPublicUrl(path);
+    setFormData(prev => ({ ...prev, coverImage: publicUrl }));
+  };
+
+  const uploadBanner = async () => {
+    if (!bannerFile) return;
+    setUploadingBanner(true);
+    const ext = bannerFile.name.split('.').pop();
+    const path = `banners/${Date.now()}.${ext}`;
+    const bucket = formData.bannerKind === 'image' ? 'course-assets' : 'videos';
+    const { error } = await supabase.storage.from(bucket).upload(path, bannerFile);
+    setUploadingBanner(false);
+    if (error) return;
+    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+    if (formData.bannerKind === 'image') {
+      setFormData(prev => ({ ...prev, bannerImage: publicUrl, bannerVideo: null }));
+    } else {
+      setFormData(prev => ({ ...prev, bannerVideo: publicUrl, bannerImage: '' }));
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -59,12 +100,17 @@ const Cursos: React.FC = () => {
       description: '',
       coverImage: '',
       bannerImage: '',
+      bannerVideo: null,
+      bannerKind: 'image',
       category: 'dashboard',
       level: 'iniciante',
       status: 'draft',
       isPremium: false,
       price: 0,
+      kiwifyProductId: '',
     });
+    setCoverFile(null);
+    setBannerFile(null);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -77,7 +123,16 @@ const Cursos: React.FC = () => {
       totalLessons: 0,
       totalStudents: 0,
       instructorName: 'Equipe Atlon',
+      bannerVideo: formData.bannerKind === 'video' ? formData.bannerVideo || '' : null,
     });
+    // Salvar mapeamento Kiwify se informado
+    if (formData.kiwifyProductId) {
+      await supabase.from('product_mappings').insert({
+        provider: 'kiwify',
+        product_id: formData.kiwifyProductId,
+        course_id: (createCourse as any).data?.id || null,
+      }).throwOnError();
+    }
     setIsCreateDialogOpen(false);
     resetForm();
   };
@@ -90,11 +145,14 @@ const Cursos: React.FC = () => {
       description: course.description,
       coverImage: course.coverImage,
       bannerImage: course.bannerImage,
+      bannerVideo: (course as any).bannerVideo || null,
+      bannerKind: (course as any).bannerVideo ? 'video' : 'image',
       category: course.category,
       level: course.level,
       status: course.status,
       isPremium: course.isPremium,
       price: course.price || 0,
+      kiwifyProductId: '',
     });
     setIsEditDialogOpen(true);
   };
@@ -102,10 +160,10 @@ const Cursos: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCourse) return;
-    
     await updateCourse.mutateAsync({
       id: selectedCourse.id,
       ...formData,
+      bannerVideo: formData.bannerKind === 'video' ? formData.bannerVideo || '' : null,
     });
     setIsEditDialogOpen(false);
     setSelectedCourse(null);
@@ -157,69 +215,56 @@ const Cursos: React.FC = () => {
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-gray-300">Nome do Curso *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    required
-                  />
+                  <Label className="text-gray-300">Nome do Curso *</Label>
+                  <Input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="subtitle" className="text-gray-300">Subtítulo *</Label>
-                  <Input
-                    id="subtitle"
-                    value={formData.subtitle}
-                    onChange={(e) => setFormData({...formData, subtitle: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    required
-                  />
+                  <Label className="text-gray-300">Subtítulo *</Label>
+                  <Input value={formData.subtitle} onChange={(e) => setFormData({...formData, subtitle: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-gray-300">Descrição *</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]"
-                    required
-                  />
+                  <Label className="text-gray-300">Descrição *</Label>
+                  <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]" required />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="coverImage" className="text-gray-300">URL da Capa</Label>
-                    <Input
-                      id="coverImage"
-                      value={formData.coverImage}
-                      onChange={(e) => setFormData({...formData, coverImage: e.target.value})}
-                      className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                      placeholder="https://..."
-                    />
+                    <Label className="text-gray-300">Capa</Label>
+                    <div className="flex gap-2">
+                      <Input type="file" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                      <Button type="button" onClick={uploadCover} disabled={!coverFile || uploadingCover} className="gradient-atlon text-black font-bold">
+                        <Upload className="h-4 w-4 mr-1" /> {uploadingCover ? 'Enviando...' : 'Enviar'}
+                      </Button>
+                    </div>
+                    {formData.coverImage && <p className="text-xs text-atlon-green mt-1 break-all">{formData.coverImage}</p>}
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label htmlFor="bannerImage" className="text-gray-300">URL do Banner</Label>
-                    <Input
-                      id="bannerImage"
-                      value={formData.bannerImage}
-                      onChange={(e) => setFormData({...formData, bannerImage: e.target.value})}
-                      className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                      placeholder="https://..."
-                    />
+                    <Label className="text-gray-300">Banner (Imagem/Vídeo)</Label>
+                    <Select value={formData.bannerKind} onValueChange={(v: any) => setFormData({...formData, bannerKind: v})}>
+                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
+                        <SelectItem value="image">Imagem</SelectItem>
+                        <SelectItem value="video">Vídeo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Input type="file" accept={formData.bannerKind === 'video' ? 'video/*' : 'image/*'} onChange={(e) => setBannerFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                      <Button type="button" onClick={uploadBanner} disabled={!bannerFile || uploadingBanner} className="gradient-atlon text-black font-bold">
+                        {formData.bannerKind === 'video' ? <Video className="h-4 w-4 mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                        {uploadingBanner ? 'Enviando...' : 'Enviar'}
+                      </Button>
+                    </div>
+                    {(formData.bannerImage || formData.bannerVideo) && (
+                      <p className="text-xs text-atlon-green mt-1 break-all">{formData.bannerKind === 'image' ? formData.bannerImage : formData.bannerVideo}</p>
+                    )}
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category" className="text-gray-300">Categoria</Label>
+                    <Label className="text-gray-300">Categoria</Label>
                     <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value as typeof formData.category})}>
-                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                         <SelectItem value="dashboard">Dashboard</SelectItem>
                         <SelectItem value="marketing">Marketing</SelectItem>
@@ -229,13 +274,10 @@ const Cursos: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label htmlFor="level" className="text-gray-300">Nível</Label>
+                    <Label className="text-gray-300">Nível</Label>
                     <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value as typeof formData.level})}>
-                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                         <SelectItem value="iniciante">Iniciante</SelectItem>
                         <SelectItem value="intermediario">Intermediário</SelectItem>
@@ -243,13 +285,10 @@ const Cursos: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label htmlFor="status" className="text-gray-300">Status</Label>
+                    <Label className="text-gray-300">Status</Label>
                     <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as typeof formData.status})}>
-                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                         <SelectItem value="draft">Rascunho</SelectItem>
                         <SelectItem value="published">Publicado</SelectItem>
@@ -265,9 +304,7 @@ const Cursos: React.FC = () => {
                       value={formData.isPremium ? 'premium' : 'free'} 
                       onValueChange={(value) => setFormData({...formData, isPremium: value === 'premium'})}
                     >
-                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                         <SelectItem value="free">Gratuito</SelectItem>
                         <SelectItem value="premium">Premium</SelectItem>
@@ -277,9 +314,8 @@ const Cursos: React.FC = () => {
 
                   {formData.isPremium && (
                     <div className="space-y-2">
-                      <Label htmlFor="price" className="text-gray-300">Preço (R$)</Label>
+                      <Label className="text-gray-300">Preço (R$)</Label>
                       <Input
-                        id="price"
                         type="number"
                         value={formData.price}
                         onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
@@ -290,21 +326,17 @@ const Cursos: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Kiwify Product ID (opcional)</Label>
+                  <Input value={formData.kiwifyProductId} onChange={(e) => setFormData({ ...formData, kiwifyProductId: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" placeholder="Ex: 123456" />
+                </div>
                 
                 <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                    className="border-atlon-green/10 text-white hover:bg-atlon-green/10"
-                  >
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-atlon-green/10 text-white hover:bg-atlon-green/10">
                     Cancelar
                   </Button>
-                  <Button 
-                    type="submit" 
-                    className="gradient-atlon hover:opacity-90 text-black font-bold"
-                    disabled={createCourse.isPending}
-                  >
+                  <Button type="submit" className="gradient-atlon hover:opacity-90 text-black font-bold" disabled={createCourse.isPending}>
                     {createCourse.isPending ? 'Salvando...' : 'Salvar Curso'}
                   </Button>
                 </DialogFooter>
@@ -313,7 +345,6 @@ const Cursos: React.FC = () => {
           </Dialog>
         </div>
 
-        {/* Courses Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -336,11 +367,7 @@ const Cursos: React.FC = () => {
                 <div className="aspect-video relative">
                   <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 flex gap-2">
-                    <Badge className={`${
-                      course.status === 'published' 
-                        ? 'bg-green-500/20 text-green-400 border-green-500/50' 
-                        : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
-                    }`}>
+                    <Badge className={`${course.status === 'published' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'}`}>
                       {course.status === 'published' ? 'Publicado' : 'Rascunho'}
                     </Badge>
                     {course.isPremium && (
@@ -357,8 +384,6 @@ const Cursos: React.FC = () => {
                     <Badge variant="outline" className="border-atlon-green/30 text-atlon-green">
                       {getCategoryName(course.category)}
                     </Badge>
-                    <span>•</span>
-                    <span className="capitalize">{course.level}</span>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -407,13 +432,10 @@ const Cursos: React.FC = () => {
         ) : (
           <Card className="bg-[#1A1A1A] border-atlon-green/10 p-12">
             <div className="text-center">
-              <BookOpen className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <Plus className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Nenhum curso encontrado</h3>
               <p className="text-gray-400 mb-6">Comece criando seu primeiro curso</p>
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="gradient-atlon hover:opacity-90 text-black font-bold"
-              >
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="gradient-atlon hover:opacity-90 text-black font-bold">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar Primeiro Curso
               </Button>
@@ -421,7 +443,6 @@ const Cursos: React.FC = () => {
           </Card>
         )}
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="bg-[#1A1A1A] border-atlon-green/10 max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -429,69 +450,56 @@ const Cursos: React.FC = () => {
             </DialogHeader>
             <form onSubmit={handleUpdate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-title" className="text-gray-300">Nome do Curso *</Label>
-                <Input
-                  id="edit-title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                  required
-                />
+                <Label className="text-gray-300">Nome do Curso *</Label>
+                <Input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="edit-subtitle" className="text-gray-300">Subtítulo *</Label>
-                <Input
-                  id="edit-subtitle"
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData({...formData, subtitle: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                  required
-                />
+                <Label className="text-gray-300">Subtítulo *</Label>
+                <Input value={formData.subtitle} onChange={(e) => setFormData({...formData, subtitle: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="edit-description" className="text-gray-300">Descrição *</Label>
-                <Textarea
-                  id="edit-description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]"
-                  required
-                />
+                <Label className="text-gray-300">Descrição *</Label>
+                <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]" required />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-coverImage" className="text-gray-300">URL da Capa</Label>
-                  <Input
-                    id="edit-coverImage"
-                    value={formData.coverImage}
-                    onChange={(e) => setFormData({...formData, coverImage: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    placeholder="https://..."
-                  />
+                  <Label className="text-gray-300">Capa</Label>
+                  <div className="flex gap-2">
+                    <Input type="file" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                    <Button type="button" onClick={uploadCover} disabled={!coverFile || uploadingCover} className="gradient-atlon text-black font-bold">
+                      <Upload className="h-4 w-4 mr-1" /> {uploadingCover ? 'Enviando...' : 'Enviar'}
+                    </Button>
+                  </div>
+                  {formData.coverImage && <p className="text-xs text-atlon-green mt-1 break-all">{formData.coverImage}</p>}
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="edit-bannerImage" className="text-gray-300">URL do Banner</Label>
-                  <Input
-                    id="edit-bannerImage"
-                    value={formData.bannerImage}
-                    onChange={(e) => setFormData({...formData, bannerImage: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    placeholder="https://..."
-                  />
+                  <Label className="text-gray-300">Banner (Imagem/Vídeo)</Label>
+                  <Select value={formData.bannerKind} onValueChange={(v: any) => setFormData({...formData, bannerKind: v})}>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
+                      <SelectItem value="image">Imagem</SelectItem>
+                      <SelectItem value="video">Vídeo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Input type="file" accept={formData.bannerKind === 'video' ? 'video/*' : 'image/*'} onChange={(e) => setBannerFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                    <Button type="button" onClick={uploadBanner} disabled={!bannerFile || uploadingBanner} className="gradient-atlon text-black font-bold">
+                      {formData.bannerKind === 'video' ? <Video className="h-4 w-4 mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                      {uploadingBanner ? 'Enviando...' : 'Enviar'}
+                    </Button>
+                  </div>
+                  {(formData.bannerImage || formData.bannerVideo) && (
+                    <p className="text-xs text-atlon-green mt-1 break-all">{formData.bannerKind === 'image' ? formData.bannerImage : formData.bannerVideo}</p>
+                  )}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-category" className="text-gray-300">Categoria</Label>
+                  <Label className="text-gray-300">Categoria</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value as typeof formData.category})}>
-                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                       <SelectItem value="dashboard">Dashboard</SelectItem>
                       <SelectItem value="marketing">Marketing</SelectItem>
@@ -501,13 +509,10 @@ const Cursos: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="edit-level" className="text-gray-300">Nível</Label>
+                  <Label className="text-gray-300">Nível</Label>
                   <Select value={formData.level} onValueChange={(value) => setFormData({...formData, level: value as typeof formData.level})}>
-                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                       <SelectItem value="iniciante">Iniciante</SelectItem>
                       <SelectItem value="intermediario">Intermediário</SelectItem>
@@ -515,13 +520,10 @@ const Cursos: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="edit-status" className="text-gray-300">Status</Label>
+                  <Label className="text-gray-300">Status</Label>
                   <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as typeof formData.status})}>
-                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                       <SelectItem value="draft">Rascunho</SelectItem>
                       <SelectItem value="published">Publicado</SelectItem>
@@ -537,9 +539,7 @@ const Cursos: React.FC = () => {
                     value={formData.isPremium ? 'premium' : 'free'} 
                     onValueChange={(value) => setFormData({...formData, isPremium: value === 'premium'})}
                   >
-                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                       <SelectItem value="free">Gratuito</SelectItem>
                       <SelectItem value="premium">Premium</SelectItem>
@@ -549,9 +549,8 @@ const Cursos: React.FC = () => {
 
                 {formData.isPremium && (
                   <div className="space-y-2">
-                    <Label htmlFor="edit-price" className="text-gray-300">Preço (R$)</Label>
+                    <Label className="text-gray-300">Preço (R$)</Label>
                     <Input
-                      id="edit-price"
                       type="number"
                       value={formData.price}
                       onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
@@ -562,7 +561,12 @@ const Cursos: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
+              <div className="space-y-2">
+                <Label className="text-gray-300">Kiwify Product ID (opcional)</Label>
+                <Input value={formData.kiwifyProductId} onChange={(e) => setFormData({ ...formData, kiwifyProductId: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" placeholder="Ex: 123456" />
+              </div>
+
               <DialogFooter>
                 <Button 
                   type="button" 
@@ -588,7 +592,6 @@ const Cursos: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent className="bg-[#1A1A1A] border-red-500/20">
             <AlertDialogHeader>

@@ -20,11 +20,11 @@ import Cursos from "./pages/admin/Cursos";
 import Modulos from "./pages/admin/Modulos";
 import Aulas from "./pages/admin/Aulas";
 import Alunos from "./pages/admin/Alunos";
+import Marketing from "./pages/admin/Marketing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Componente para proteger rotas
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) => {
   const { isAuthenticated, user, loading } = useAuth();
   
@@ -51,31 +51,28 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Rotas Públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             <Route path="/atualizar-senha" element={<AtualizarSenha />} />
-            
-            {/* Rotas do Aluno */}
+
             <Route path="/meus-cursos" element={<ProtectedRoute><MeusCursos /></ProtectedRoute>} />
             <Route path="/curso/:courseId" element={<ProtectedRoute><CursoDetalhes /></ProtectedRoute>} />
             <Route path="/curso/:courseId/modulo/:moduleId" element={<ProtectedRoute><ModuloAulas /></ProtectedRoute>} />
             <Route path="/ofertas" element={<ProtectedRoute><Ofertas /></ProtectedRoute>} />
             <Route path="/suporte" element={<ProtectedRoute><Suporte /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
-            
-            {/* Rotas do Admin */}
+
             <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/cursos" element={<ProtectedRoute adminOnly><Cursos /></ProtectedRoute>} />
             <Route path="/admin/modulos" element={<ProtectedRoute adminOnly><Modulos /></ProtectedRoute>} />
             <Route path="/admin/aulas" element={<ProtectedRoute adminOnly><Aulas /></ProtectedRoute>} />
             <Route path="/admin/alunos" element={<ProtectedRoute adminOnly><Alunos /></ProtectedRoute>} />
+            <Route path="/admin/marketing" element={<ProtectedRoute adminOnly><Marketing /></ProtectedRoute>} />
             <Route path="/admin/financeiro" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/configuracoes" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
             
-            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

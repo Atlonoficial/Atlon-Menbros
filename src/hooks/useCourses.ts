@@ -14,7 +14,21 @@ export const useCourses = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Course[];
+      return data.map((c: any) => ({
+        ...c,
+        coverImage: c.cover_image,
+        bannerImage: c.banner_image,
+        bannerVideo: c.banner_video || null,
+        targetAudience: c.target_audience,
+        totalDuration: c.total_duration,
+        totalModules: c.total_modules,
+        totalLessons: c.total_lessons,
+        totalStudents: c.total_students,
+        instructorId: c.instructor_id,
+        instructorName: c.instructor_name,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      })) as unknown as Course[];
     },
   });
 };
@@ -29,7 +43,21 @@ export const useAllCourses = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Course[];
+      return data.map((c: any) => ({
+        ...c,
+        coverImage: c.cover_image,
+        bannerImage: c.banner_image,
+        bannerVideo: c.banner_video || null,
+        targetAudience: c.target_audience,
+        totalDuration: c.total_duration,
+        totalModules: c.total_modules,
+        totalLessons: c.total_lessons,
+        totalStudents: c.total_students,
+        instructorId: c.instructor_id,
+        instructorName: c.instructor_name,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      })) as unknown as Course[];
     },
   });
 };
@@ -47,7 +75,22 @@ export const useCourse = (courseId: string | undefined) => {
         .single();
 
       if (error) throw error;
-      return data as Course;
+      const c: any = data;
+      return {
+        ...c,
+        coverImage: c.cover_image,
+        bannerImage: c.banner_image,
+        bannerVideo: c.banner_video || null,
+        targetAudience: c.target_audience,
+        totalDuration: c.total_duration,
+        totalModules: c.total_modules,
+        totalLessons: c.total_lessons,
+        totalStudents: c.total_students,
+        instructorId: c.instructor_id,
+        instructorName: c.instructor_name,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      } as unknown as Course;
     },
     enabled: !!courseId,
   });
@@ -57,10 +100,30 @@ export const useCreateCourse = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (courseData: Partial<Course>) => {
+    mutationFn: async (courseData: Partial<Course> & { bannerVideo?: string | null }) => {
+      const payload: any = {
+        title: courseData.title,
+        subtitle: courseData.subtitle,
+        description: courseData.description,
+        cover_image: courseData.coverImage,
+        banner_image: courseData.bannerImage,
+        banner_video: (courseData as any).bannerVideo || null,
+        category: courseData.category,
+        level: courseData.level,
+        status: courseData.status,
+        is_premium: courseData.isPremium,
+        price: courseData.price,
+        target_audience: courseData.targetAudience,
+        total_duration: courseData.totalDuration || 0,
+        total_modules: courseData.totalModules || 0,
+        total_lessons: courseData.totalLessons || 0,
+        total_students: courseData.totalStudents || 0,
+        instructor_name: courseData.instructorName || 'Equipe Atlon',
+      };
+
       const { data, error } = await supabase
         .from('courses')
-        .insert([courseData])
+        .insert([payload])
         .select()
         .single();
 
@@ -82,10 +145,30 @@ export const useUpdateCourse = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...courseData }: Partial<Course> & { id: string }) => {
+    mutationFn: async ({ id, ...courseData }: Partial<Course> & { id: string; bannerVideo?: string | null }) => {
+      const payload: any = {
+        title: courseData.title,
+        subtitle: courseData.subtitle,
+        description: courseData.description,
+        cover_image: courseData.coverImage,
+        banner_image: courseData.bannerImage,
+        banner_video: (courseData as any).bannerVideo ?? null,
+        category: courseData.category,
+        level: courseData.level,
+        status: courseData.status,
+        is_premium: courseData.isPremium,
+        price: courseData.price,
+        target_audience: courseData.targetAudience,
+        total_duration: courseData.totalDuration,
+        total_modules: courseData.totalModules,
+        total_lessons: courseData.totalLessons,
+        total_students: courseData.totalStudents,
+        instructor_name: courseData.instructorName,
+      };
+
       const { data, error } = await supabase
         .from('courses')
-        .update(courseData)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();

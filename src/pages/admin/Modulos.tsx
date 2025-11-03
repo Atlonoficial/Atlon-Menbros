@@ -13,8 +13,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAllCourses } from '@/hooks/useCourses';
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from '@/hooks/useModules';
-import { Plus, Edit, Trash2, BookOpen, Lock, Unlock } from 'lucide-react';
+import { useModuleAttachments, useAddModuleAttachment, useDeleteModuleAttachment } from '@/hooks/useAttachments';
+import { Plus, Edit, Trash2, BookOpen, Lock, Unlock, Upload, Paperclip } from 'lucide-react';
 import { Module } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 const Modulos: React.FC = () => {
   const { data: courses } = useAllCourses();
@@ -38,6 +40,21 @@ const Modulos: React.FC = () => {
     unlockCondition: '',
   });
 
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const uploadCover = async () => {
+    if (!coverFile) return;
+    setUploadingCover(true);
+    const ext = coverFile.name.split('.').pop();
+    const path = `modules/${selectedCourseId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('course-assets').upload(path, coverFile);
+    setUploadingCover(false);
+    if (error) return;
+    const { data: { publicUrl } } = supabase.storage.from('course-assets').getPublicUrl(path);
+    setFormData(prev => ({ ...prev, coverImage: publicUrl }));
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -47,6 +64,7 @@ const Modulos: React.FC = () => {
       isLocked: false,
       unlockCondition: '',
     });
+    setCoverFile(null);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -96,6 +114,43 @@ const Modulos: React.FC = () => {
     setSelectedModule(null);
   };
 
+  const ModuleAttachments = ({ moduleId }: { moduleId: string }) => {
+    const { data: attachments } = useModuleAttachments(moduleId);
+    const addAttachment = useAddModuleAttachment();
+    const delAttachment = useDeleteModuleAttachment();
+    const [file, setFile] = useState<File | null>(null);
+
+    const uploadAttachment = async () => {
+      if (!file) return;
+      await addAttachment.mutateAsync({ moduleId, file });
+      setFile(null);
+    };
+
+    return (
+      <div className="mt-4">
+        <div className="flex gap-2 items-center mb-2">
+          <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+          <Button onClick={uploadAttachment} disabled={!file} size="sm" className="gradient-atlon text-black font-bold">
+            <Upload className="h-4 w-4 mr-1" /> Enviar Anexo
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {attachments?.map((a: any) => (
+            <div key={a.id} className="flex items-center justify-between text-sm text-gray-300 bg-[#0B0B0B] p-2 rounded border border-atlon-green/10">
+              <div className="flex items-center gap-2 min-w-0">
+                <Paperclip className="h-4 w-4 text-gray-500" />
+                <a href={a.url} target="_blank" className="truncate hover:underline">{a.name}</a>
+              </div>
+              <Button size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => delAttachment.mutate({ id: a.id, moduleId })}>
+                Remover
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0A0A] to-black">
       <Header />
@@ -109,7 +164,6 @@ const Modulos: React.FC = () => {
           <p className="text-gray-400">Gerencie os módulos de cada curso</p>
         </div>
 
-        {/* Course Selector */}
         <Card className="bg-[#1A1A1A] border-atlon-green/10 mb-6">
           <CardHeader>
             <CardTitle className="text-white">Selecione um Curso</CardTitle>
@@ -150,60 +204,32 @@ const Modulos: React.FC = () => {
                   </DialogHeader>
                   <form onSubmit={handleCreate} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title" className="text-gray-300">Título do Módulo *</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData({...formData, title: e.target.value})}
-                        className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                        required
-                      />
+                      <Label className="text-gray-300">Título do Módulo *</Label>
+                      <Input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="text-gray-300">Descrição *</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]"
-                        required
-                      />
+                      <Label className="text-gray-300">Descrição *</Label>
+                      <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]" required />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="coverImage" className="text-gray-300">URL da Imagem de Capa</Label>
-                      <Input
-                        id="coverImage"
-                        value={formData.coverImage}
-                        onChange={(e) => setFormData({...formData, coverImage: e.target.value})}
-                        className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                        placeholder="https://..."
-                      />
+                      <Label className="text-gray-300">Capa</Label>
+                      <div className="flex gap-2">
+                        <Input type="file" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                        <Button type="button" onClick={uploadCover} disabled={!coverFile || uploadingCover} className="gradient-atlon text-black font-bold">
+                          <Upload className="h-4 w-4 mr-1" /> {uploadingCover ? 'Enviando...' : 'Enviar'}
+                        </Button>
+                      </div>
+                      {formData.coverImage && <p className="text-xs text-atlon-green mt-1 break-all">{formData.coverImage}</p>}
                     </div>
-                    
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="order" className="text-gray-300">Ordem</Label>
-                        <Input
-                          id="order"
-                          type="number"
-                          value={formData.order}
-                          onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})}
-                          className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                          min="1"
-                        />
+                        <Label className="text-gray-300">Ordem</Label>
+                        <Input type="number" value={formData.order} onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" min="1" />
                       </div>
-                      
                       <div className="space-y-2">
                         <Label className="text-gray-300">Status</Label>
-                        <Select 
-                          value={formData.isLocked ? 'locked' : 'unlocked'} 
-                          onValueChange={(value) => setFormData({...formData, isLocked: value === 'locked'})}
-                        >
-                          <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={formData.isLocked ? 'locked' : 'unlocked'} onValueChange={(value) => setFormData({...formData, isLocked: value === 'locked'})}>
+                          <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                           <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                             <SelectItem value="unlocked">Desbloqueado</SelectItem>
                             <SelectItem value="locked">Bloqueado</SelectItem>
@@ -211,34 +237,11 @@ const Modulos: React.FC = () => {
                         </Select>
                       </div>
                     </div>
-
-                    {formData.isLocked && (
-                      <div className="space-y-2">
-                        <Label htmlFor="unlockCondition" className="text-gray-300">Condição de Desbloqueio</Label>
-                        <Input
-                          id="unlockCondition"
-                          value={formData.unlockCondition}
-                          onChange={(e) => setFormData({...formData, unlockCondition: e.target.value})}
-                          className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                          placeholder="Ex: Completar módulo anterior"
-                        />
-                      </div>
-                    )}
-                    
                     <DialogFooter>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsCreateDialogOpen(false)}
-                        className="border-atlon-green/10 text-white hover:bg-atlon-green/10"
-                      >
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-atlon-green/10 text-white hover:bg-atlon-green/10">
                         Cancelar
                       </Button>
-                      <Button 
-                        type="submit" 
-                        className="gradient-atlon hover:opacity-90 text-black font-bold"
-                        disabled={createModule.isPending}
-                      >
+                      <Button type="submit" className="gradient-atlon hover:opacity-90 text-black font-bold" disabled={createModule.isPending}>
                         {createModule.isPending ? 'Salvando...' : 'Salvar Módulo'}
                       </Button>
                     </DialogFooter>
@@ -247,7 +250,6 @@ const Modulos: React.FC = () => {
               </Dialog>
             </div>
 
-            {/* Modules Grid */}
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -294,25 +296,20 @@ const Modulos: React.FC = () => {
                           <Unlock className="h-4 w-4 text-green-400" />
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1 border-atlon-green/10 text-white hover:bg-atlon-green/10"
-                          onClick={() => handleEdit(module)}
-                        >
+
+                      <div className="border-t border-atlon-green/10 pt-3">
+                        <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                          <Paperclip className="h-4 w-4" /> Anexos
+                        </h4>
+                        <ModuleAttachments moduleId={module.id} />
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1 border-atlon-green/10 text-white hover:bg-atlon-green/10" onClick={() => handleEdit(module)}>
                           <Edit className="h-4 w-4 mr-1" />
                           Editar
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                          onClick={() => {
-                            setSelectedModule(module);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
+                        <Button variant="outline" size="sm" className="border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => { setSelectedModule(module); setIsDeleteDialogOpen(true); }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -326,10 +323,7 @@ const Modulos: React.FC = () => {
                   <BookOpen className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-white mb-2">Nenhum módulo encontrado</h3>
                   <p className="text-gray-400 mb-6">Comece criando o primeiro módulo deste curso</p>
-                  <Button 
-                    onClick={() => setIsCreateDialogOpen(true)}
-                    className="gradient-atlon hover:opacity-90 text-black font-bold"
-                  >
+                  <Button onClick={() => setIsCreateDialogOpen(true)} className="gradient-atlon hover:opacity-90 text-black font-bold">
                     <Plus className="mr-2 h-4 w-4" />
                     Criar Primeiro Módulo
                   </Button>
@@ -349,7 +343,6 @@ const Modulos: React.FC = () => {
           </Card>
         )}
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="bg-[#1A1A1A] border-atlon-green/10 max-w-2xl">
             <DialogHeader>
@@ -357,60 +350,32 @@ const Modulos: React.FC = () => {
             </DialogHeader>
             <form onSubmit={handleUpdate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-title" className="text-gray-300">Título do Módulo *</Label>
-                <Input
-                  id="edit-title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                  required
-                />
+                <Label className="text-gray-300">Título do Módulo *</Label>
+                <Input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="edit-description" className="text-gray-300">Descrição *</Label>
-                <Textarea
-                  id="edit-description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]"
-                  required
-                />
+                <Label className="text-gray-300">Descrição *</Label>
+                <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="bg-[#0B0B0B] border-atlon-green/10 text-white min-h-[100px]" required />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="edit-coverImage" className="text-gray-300">URL da Imagem de Capa</Label>
-                <Input
-                  id="edit-coverImage"
-                  value={formData.coverImage}
-                  onChange={(e) => setFormData({...formData, coverImage: e.target.value})}
-                  className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                  placeholder="https://..."
-                />
+                <Label className="text-gray-300">Capa</Label>
+                <div className="flex gap-2">
+                  <Input type="file" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                  <Button type="button" onClick={uploadCover} disabled={!coverFile || uploadingCover} className="gradient-atlon text-black font-bold">
+                    <Upload className="h-4 w-4 mr-1" /> {uploadingCover ? 'Enviando...' : 'Enviar'}
+                  </Button>
+                </div>
+                {formData.coverImage && <p className="text-xs text-atlon-green mt-1 break-all">{formData.coverImage}</p>}
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-order" className="text-gray-300">Ordem</Label>
-                  <Input
-                    id="edit-order"
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    min="1"
-                  />
+                  <Label className="text-gray-300">Ordem</Label>
+                  <Input type="number" value={formData.order} onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})} className="bg-[#0B0B0B] border-atlon-green/10 text-white" min="1" />
                 </div>
-                
                 <div className="space-y-2">
                   <Label className="text-gray-300">Status</Label>
-                  <Select 
-                    value={formData.isLocked ? 'locked' : 'unlocked'} 
-                    onValueChange={(value) => setFormData({...formData, isLocked: value === 'locked'})}
-                  >
-                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={formData.isLocked ? 'locked' : 'unlocked'} onValueChange={(value) => setFormData({...formData, isLocked: value === 'locked'})}>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
                       <SelectItem value="unlocked">Desbloqueado</SelectItem>
                       <SelectItem value="locked">Bloqueado</SelectItem>
@@ -418,38 +383,11 @@ const Modulos: React.FC = () => {
                   </Select>
                 </div>
               </div>
-
-              {formData.isLocked && (
-                <div className="space-y-2">
-                  <Label htmlFor="edit-unlockCondition" className="text-gray-300">Condição de Desbloqueio</Label>
-                  <Input
-                    id="edit-unlockCondition"
-                    value={formData.unlockCondition}
-                    onChange={(e) => setFormData({...formData, unlockCondition: e.target.value})}
-                    className="bg-[#0B0B0B] border-atlon-green/10 text-white"
-                    placeholder="Ex: Completar módulo anterior"
-                  />
-                </div>
-              )}
-              
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsEditDialogOpen(false);
-                    setSelectedModule(null);
-                    resetForm();
-                  }}
-                  className="border-atlon-green/10 text-white hover:bg-atlon-green/10"
-                >
+                <Button type="button" variant="outline" onClick={() => { setIsEditDialogOpen(false); setSelectedModule(null); resetForm(); }} className="border-atlon-green/10 text-white hover:bg-atlon-green/10">
                   Cancelar
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="gradient-atlon hover:opacity-90 text-black font-bold"
-                  disabled={updateModule.isPending}
-                >
+                <Button type="submit" className="gradient-atlon hover:opacity-90 text-black font-bold" disabled={updateModule.isPending}>
                   {updateModule.isPending ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
               </DialogFooter>
@@ -457,7 +395,6 @@ const Modulos: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent className="bg-[#1A1A1A] border-red-500/20">
             <AlertDialogHeader>
@@ -471,11 +408,7 @@ const Modulos: React.FC = () => {
               <AlertDialogCancel className="border-atlon-green/10 text-white hover:bg-atlon-green/10">
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-red-500 hover:bg-red-600 text-white"
-                disabled={deleteModule.isPending}
-              >
+              <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white" disabled={deleteModule.isPending}>
                 {deleteModule.isPending ? 'Excluindo...' : 'Excluir Módulo'}
               </AlertDialogAction>
             </AlertDialogFooter>

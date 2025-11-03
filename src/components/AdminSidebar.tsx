@@ -8,7 +8,8 @@ import {
   Users, 
   DollarSign, 
   Settings,
-  Sparkles
+  Sparkles,
+  Megaphone
 } from 'lucide-react';
 
 const menuItems = [
@@ -17,6 +18,7 @@ const menuItems = [
   { icon: Layers, label: 'Módulos', path: '/admin/modulos' },
   { icon: PlaySquare, label: 'Aulas', path: '/admin/aulas' },
   { icon: Users, label: 'Alunos', path: '/admin/alunos' },
+  { icon: Megaphone, label: 'Marketing', path: '/admin/marketing' },
   { icon: DollarSign, label: 'Financeiro', path: '/admin/financeiro' },
   { icon: Settings, label: 'Configurações', path: '/admin/configuracoes' },
 ];
@@ -26,11 +28,9 @@ export const AdminSidebar: React.FC = () => {
 
   return (
     <aside className="fixed left-0 top-16 bottom-0 w-64 bg-[#060606] border-r border-atlon-green/10 overflow-y-auto tech-grid">
-      {/* Efeito de brilho no topo */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-atlon-green to-transparent"></div>
       
       <nav className="p-4 space-y-2">
-        {/* Header da Sidebar */}
         <div className="mb-6 px-4 py-3 bg-gradient-to-r from-atlon-green/10 to-transparent rounded-lg border border-atlon-green/20">
           <div className="flex items-center space-x-2">
             <Sparkles className="h-4 w-4 text-atlon-green animate-pulse" />
@@ -52,12 +52,9 @@ export const AdminSidebar: React.FC = () => {
                   : 'text-gray-400 hover:text-atlon-green hover:bg-atlon-green/5'
               }`}
             >
-              {/* Efeito de brilho ao passar o mouse */}
               {!isActive && (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-atlon-green/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -translate-x-full group-hover:translate-x-full"></div>
               )}
-              
-              {/* Barra lateral indicadora */}
               <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
                 isActive ? 'bg-black' : 'bg-transparent group-hover:bg-atlon-green'
               }`}></div>
@@ -66,8 +63,6 @@ export const AdminSidebar: React.FC = () => {
                 isActive ? 'text-black' : ''
               }`} />
               <span className="font-medium relative z-10">{item.label}</span>
-              
-              {/* Efeito de partículas no item ativo */}
               {isActive && (
                 <>
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-atlon-green/20 blur-xl rounded-full"></div>
@@ -79,7 +74,6 @@ export const AdminSidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Footer da Sidebar */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-atlon-green/10 bg-gradient-to-t from-black to-transparent">
         <div className="flex items-center justify-center space-x-2 text-xs text-gray-600">
           <div className="w-2 h-2 bg-atlon-green rounded-full animate-pulse"></div>

@@ -21,6 +21,7 @@ export interface Course {
   description: string;
   coverImage: string;
   bannerImage: string;
+  bannerVideo?: string | null;
   category: 'dashboard' | 'marketing' | 'vendas' | 'gestao' | 'tecnico';
   level: 'iniciante' | 'intermediario' | 'avancado';
   status: 'draft' | 'published';
@@ -68,7 +69,7 @@ export interface Lesson {
 
 export interface Attachment {
   id: string;
-  lessonId: string;
+  lessonId?: string;
   name: string;
   type: string;
   url: string;

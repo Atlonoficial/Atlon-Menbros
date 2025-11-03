@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Menu, X, LogOut, User, BookOpen, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,12 +16,16 @@ import { Badge } from '@/components/ui/badge';
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
+
+  const isAdminArea = location.pathname.startsWith('/admin');
+  const isAdmin = user?.role === 'admin';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-atlon-green/20 scan-line">
@@ -30,7 +34,7 @@ export const Header: React.FC = () => {
       <div className="container mx-auto px-4 relative">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to={user?.role === 'admin' ? '/admin' : '/meus-cursos'} className="flex items-center space-x-3 group">
+          <Link to={isAdmin ? '/admin' : '/meus-cursos'} className="flex items-center space-x-3 group">
             <div className="relative">
               <img 
                 src="/Logo perfil Atlon!.png" 
@@ -46,43 +50,45 @@ export const Header: React.FC = () => {
               <h1 className="text-xl font-bold gradient-atlon-text tracking-wider">
                 ATLON ACADEMY
               </h1>
-              <span className="text-[9px] text-gray-500 tracking-widest uppercase">Powered by AI</span>
+              <span className="text-[9px] text-gray-500 tracking-widest uppercase">{isAdminArea ? 'Admin' : 'Student'}</span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link 
-              to="/meus-cursos" 
-              className="text-gray-400 hover:text-atlon-green transition-all flex items-center space-x-2 group relative"
-            >
-              <BookOpen className="h-4 w-4 group-hover:animate-pulse" />
-              <span className="font-medium">Meus Cursos</span>
-              <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link 
-              to="/ofertas" 
-              className="text-gray-400 hover:text-atlon-green transition-all group relative"
-            >
-              <span className="font-medium">Ofertas</span>
-              <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link 
-              to="/suporte" 
-              className="text-gray-400 hover:text-atlon-green transition-all group relative"
-            >
-              <span className="font-medium">Suporte</span>
-              <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-gray-400 hover:text-atlon-green hover:bg-atlon-green/10 relative group"
-            >
-              <Search className="h-5 w-5" />
-              <div className="absolute inset-0 bg-atlon-green/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </Button>
-          </nav>
+          {/* Desktop Navigation - somente para aluno */}
+          {!isAdminArea && (
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link 
+                to="/meus-cursos" 
+                className="text-gray-400 hover:text-atlon-green transition-all flex items-center space-x-2 group relative"
+              >
+                <BookOpen className="h-4 w-4 group-hover:animate-pulse" />
+                <span className="font-medium">Meus Cursos</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
+              </Link>
+              <Link 
+                to="/ofertas" 
+                className="text-gray-400 hover:text-atlon-green transition-all group relative"
+              >
+                <span className="font-medium">Ofertas</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
+              </Link>
+              <Link 
+                to="/suporte" 
+                className="text-gray-400 hover:text-atlon-green transition-all group relative"
+              >
+                <span className="font-medium">Suporte</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-atlon-green group-hover:w-full transition-all duration-300"></div>
+              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-gray-400 hover:text-atlon-green hover:bg-atlon-green/10 relative group"
+              >
+                <Search className="h-5 w-5" />
+                <div className="absolute inset-0 bg-atlon-green/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </Button>
+            </nav>
+          )}
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
@@ -107,11 +113,6 @@ export const Header: React.FC = () => {
                           {user?.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      {user.streak && user.streak > 0 && (
-                        <div className="absolute -top-1 -right-1 bg-atlon-green text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-neon">
-                          {user.streak}
-                        </div>
-                      )}
                       <div className="absolute inset-0 bg-atlon-green/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   </DropdownMenuTrigger>
@@ -119,25 +120,21 @@ export const Header: React.FC = () => {
                     <div className="px-2 py-3 border-b border-atlon-green/10">
                       <p className="text-sm font-medium text-white">{user.name}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
-                      {user.profession && (
-                        <Badge variant="outline" className="mt-2 border-atlon-green/30 text-atlon-green text-xs">
-                          {user.profession === 'personal_trainer' ? 'Personal Trainer' : 'Nutricionista'}
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className="mt-2 border-atlon-green/30 text-atlon-green text-xs">
+                        {isAdmin ? 'Administrador' : 'Aluno'}
+                      </Badge>
                     </div>
-                    <DropdownMenuItem 
-                      asChild
-                      className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer"
-                    >
-                      <Link to="/perfil">
-                        <User className="mr-2 h-4 w-4" />
-                        Meu Perfil
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Meus Certificados
-                    </DropdownMenuItem>
+                    {!isAdminArea && (
+                      <DropdownMenuItem 
+                        asChild
+                        className="text-gray-400 focus:text-white focus:bg-atlon-green/10 cursor-pointer"
+                      >
+                        <Link to="/perfil">
+                          <User className="mr-2 h-4 w-4" />
+                          Meu Perfil
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator className="bg-atlon-green/10" />
                     <DropdownMenuItem 
                       onClick={handleLogout}
@@ -162,8 +159,8 @@ export const Header: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
+        {/* Mobile Menu - somente aluno */}
+        {!isAdminArea && mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-atlon-green/10 bg-black/50 backdrop-blur-xl">
             <nav className="flex flex-col space-y-4">
               <Link 

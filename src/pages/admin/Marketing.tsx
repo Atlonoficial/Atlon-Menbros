@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useAllBanners, useCreateBanner, useDeleteBanner, useUpdateBanner } from
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Upload } from 'lucide-react';
+import MarketingPreview from '@/components/MarketingPreview';
 
 const Marketing: React.FC = () => {
   const { data: banners } = useAllBanners();
@@ -25,7 +26,31 @@ const Marketing: React.FC = () => {
     active: true,
   });
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl('');
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    if (selectedFile) {
+      if (selectedFile.type.startsWith('video/')) {
+        setForm(prev => ({ ...prev, type: 'video' }));
+      } else {
+        setForm(prev => ({ ...prev, type: 'image' }));
+      }
+    }
+  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -45,11 +70,12 @@ const Marketing: React.FC = () => {
       title: form.title,
       type: form.type,
       asset_url: form.assetUrl,
-      link_url: form.linkUrl || null as any,
+      link_url: form.linkUrl || undefined,
       active: form.active,
     } as any);
     setForm({ title: '', type: 'image', assetUrl: '', linkUrl: '', active: true });
     setFile(null);
+    setPreviewUrl('');
   };
 
   const toggleActive = async (id: string, active: boolean) => {
@@ -72,60 +98,71 @@ const Marketing: React.FC = () => {
           <p className="text-gray-400">Gerencie banners e vídeos promovidos no painel do aluno</p>
         </div>
 
-        <Card className="bg-[#1A1A1A] border-atlon-green/10 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white">Novo Banner</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-300">Título</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">Tipo</Label>
-                <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
-                  <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
-                    <SelectItem value="image">Imagem</SelectItem>
-                    <SelectItem value="video">Vídeo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-gray-300">Arquivo</Label>
-                <div className="flex gap-2">
-                  <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
-                  <Button type="button" onClick={handleUpload} disabled={!file || uploading} className="gradient-atlon text-black font-bold">
-                    <Upload className="h-4 w-4 mr-1" /> {uploading ? 'Enviando...' : 'Enviar'}
-                  </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="bg-[#1A1A1A] border-atlon-green/10">
+            <CardHeader>
+              <CardTitle className="text-white">Novo Banner</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Título</Label>
+                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" required />
                 </div>
-                {form.assetUrl && <p className="text-xs text-atlon-green mt-1 break-all">{form.assetUrl}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">URL de destino (opcional)</Label>
-                <Input value={form.linkUrl} onChange={(e) => setForm({ ...form, linkUrl: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" placeholder="https://..." />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">Status</Label>
-                <Select value={form.active ? 'active' : 'inactive'} onValueChange={(v: any) => setForm({ ...form, active: v === 'active' })}>
-                  <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-2">
-                <Button type="submit" className="gradient-atlon text-black font-bold">Salvar Banner</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Tipo</Label>
+                  <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
+                      <SelectItem value="image">Imagem</SelectItem>
+                      <SelectItem value="video">Vídeo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Arquivo</Label>
+                  <div className="flex gap-2">
+                    <Input type="file" onChange={handleFileChange} className="bg-[#0B0B0B] border-atlon-green/10 text-white" />
+                    <Button type="button" onClick={handleUpload} disabled={!file || uploading} className="gradient-atlon text-black font-bold">
+                      <Upload className="h-4 w-4 mr-1" /> {uploading ? 'Enviando...' : 'Enviar'}
+                    </Button>
+                  </div>
+                  {form.assetUrl && <p className="text-xs text-atlon-green mt-1 break-all">{form.assetUrl}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">URL de destino (opcional)</Label>
+                  <Input value={form.linkUrl} onChange={(e) => setForm({ ...form, linkUrl: e.target.value })} className="bg-[#0B0B0B] border-atlon-green/10 text-white" placeholder="https://..." />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Status</Label>
+                  <Select value={form.active ? 'active' : 'inactive'} onValueChange={(v: any) => setForm({ ...form, active: v === 'active' })}>
+                    <SelectTrigger className="bg-[#0B0B0B] border-atlon-green/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-atlon-green/10">
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Button type="submit" className="gradient-atlon text-black font-bold w-full">Salvar Banner</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-[#1A1A1A] border-atlon-green/10">
+          <div>
+            <MarketingPreview
+              assetUrl={previewUrl || form.assetUrl}
+              title={form.title}
+              type={form.type}
+              linkUrl={form.linkUrl}
+            />
+          </div>
+        </div>
+
+        <Card className="bg-[#1A1A1A] border-atlon-green/10 mt-8">
           <CardHeader>
-            <CardTitle className="text-white">Banners</CardTitle>
+            <CardTitle className="text-white">Banners Atuais</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

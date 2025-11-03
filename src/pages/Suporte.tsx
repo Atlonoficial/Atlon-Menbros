@@ -31,54 +31,54 @@ const Suporte: React.FC = () => {
       
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#A020F0] via-[#FF4DD2] to-[#FF7A33] bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 gradient-atlon-text uppercase">
             CENTRAL DE SUPORTE
           </h1>
           <p className="text-gray-400">Estamos aqui para ajudar você</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-[#1A1A1A] border-white/10">
+          <Card className="bg-[#1A1A1A] border-atlon-green/10 card-glow">
             <CardHeader>
-              <MessageCircle className="h-8 w-8 text-[#A020F0] mb-2" />
+              <MessageCircle className="h-8 w-8 text-atlon-green mb-2" />
               <CardTitle className="text-white">WhatsApp</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">Fale conosco diretamente pelo WhatsApp</p>
-              <Button className="w-full bg-gradient-to-r from-[#A020F0] to-[#FF4DD2] hover:opacity-90">
+              <Button className="w-full gradient-atlon hover:opacity-90 text-black font-bold">
                 Abrir WhatsApp
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1A1A1A] border-white/10">
+          <Card className="bg-[#1A1A1A] border-atlon-green/10 card-glow">
             <CardHeader>
-              <Mail className="h-8 w-8 text-[#FF4DD2] mb-2" />
+              <Mail className="h-8 w-8 text-atlon-green mb-2" />
               <CardTitle className="text-white">E-mail</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">Envie sua dúvida por e-mail</p>
-              <Button variant="outline" className="w-full border-white/10 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full border-atlon-green/10 text-white hover:bg-atlon-green/10">
                 suporte@operacaodesigner.com
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1A1A1A] border-white/10">
+          <Card className="bg-[#1A1A1A] border-atlon-green/10 card-glow">
             <CardHeader>
-              <Phone className="h-8 w-8 text-[#FF7A33] mb-2" />
+              <Phone className="h-8 w-8 text-atlon-green mb-2" />
               <CardTitle className="text-white">Telefone</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">Ligue para nossa central</p>
-              <Button variant="outline" className="w-full border-white/10 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full border-atlon-green/10 text-white hover:bg-atlon-green/10">
                 (11) 9999-9999
               </Button>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="bg-[#1A1A1A] border-white/10">
+        <Card className="bg-[#1A1A1A] border-atlon-green/10 card-glow">
           <CardHeader>
             <CardTitle className="text-white text-2xl">Perguntas Frequentes</CardTitle>
           </CardHeader>
@@ -86,7 +86,7 @@ const Suporte: React.FC = () => {
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`} className="border-white/10">
-                  <AccordionTrigger className="text-white hover:text-[#A020F0]">
+                  <AccordionTrigger className="text-white hover:text-atlon-green">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-gray-400">

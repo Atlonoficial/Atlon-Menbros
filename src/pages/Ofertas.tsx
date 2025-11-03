@@ -31,7 +31,7 @@ const Ofertas: React.FC = () => {
       
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#A020F0] via-[#FF4DD2] to-[#FF7A33] bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 gradient-atlon-text uppercase">
             OFERTAS ESPECIAIS
           </h1>
           <p className="text-gray-400">Aproveite nossas promoções exclusivas</p>
@@ -39,10 +39,10 @@ const Ofertas: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {offers.map((offer) => (
-            <Card key={offer.id} className="bg-[#1A1A1A] border-white/10 overflow-hidden">
+            <Card key={offer.id} className="bg-[#1A1A1A] border-atlon-green/10 overflow-hidden card-glow">
               <div className="relative aspect-video">
                 <img src={offer.image} alt={offer.name} className="w-full h-full object-cover" />
-                <Badge className="absolute top-2 right-2 bg-[#FF7A33] text-white border-0">
+                <Badge className="absolute top-2 right-2 bg-atlon-green text-black border-0">
                   {offer.discount}
                 </Badge>
               </div>
@@ -64,7 +64,7 @@ const Ofertas: React.FC = () => {
                     <span className="text-sm text-gray-500 line-through">{offer.originalPrice}</span>
                   </div>
                 </div>
-                <Button className="w-full bg-gradient-to-r from-[#A020F0] to-[#FF4DD2] hover:opacity-90">
+                <Button className="w-full gradient-atlon hover:opacity-90 text-black font-bold">
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Comprar Agora
                 </Button>

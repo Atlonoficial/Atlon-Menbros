@@ -13,7 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStudents, useStudentProgress, useStudentEnrollments, useEnrollStudent, useUnenrollStudent, useUpdateStudent } from '@/hooks/useStudents';
 import { useAllCourses } from '@/hooks/useCourses';
-import { User, UserPlus, BookOpen, TrendingUp, Calendar, Trash2, Plus } from 'lucide-react';
+import { User as UserType } from '@/types';
+import { User, UserPlus, BookOpen, TrendingUp, Trash2, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,7 +25,7 @@ const Alunos: React.FC = () => {
   const unenrollStudent = useUnenrollStudent();
   const updateStudent = useUpdateStudent();
 
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<UserType | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -40,12 +41,12 @@ const Alunos: React.FC = () => {
     appPlan: '',
   });
 
-  const handleViewDetails = (student: any) => {
+  const handleViewDetails = (student: UserType) => {
     setSelectedStudent(student);
     setIsDetailsOpen(true);
   };
 
-  const handleEditStudent = (student: any) => {
+  const handleEditStudent = (student: UserType) => {
     setSelectedStudent(student);
     setEditFormData({
       name: student.name,
